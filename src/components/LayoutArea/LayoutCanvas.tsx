@@ -218,13 +218,19 @@ export function LayoutCanvas() {
         height: draggingPlaced.cell.rect.height,
       };
 
-      const snapResult = calculateSnap(movingRect, otherRects, newX, newY);
-      setSnapLines(snapResult.guideLines);
-      updatePlacedCellPosition(
-        dragState.placedCellId,
-        snapResult.x,
-        snapResult.y,
-      );
+      // Alt/Option キーでスナップ無効
+      if (e.altKey) {
+        setSnapLines([]);
+        updatePlacedCellPosition(dragState.placedCellId, newX, newY);
+      } else {
+        const snapResult = calculateSnap(movingRect, otherRects, newX, newY);
+        setSnapLines(snapResult.guideLines);
+        updatePlacedCellPosition(
+          dragState.placedCellId,
+          snapResult.x,
+          snapResult.y,
+        );
+      }
     },
     [dragState, placedCellsWithInfo, updatePlacedCellPosition, scale],
   );

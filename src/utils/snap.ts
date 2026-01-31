@@ -39,6 +39,20 @@ export function calculateSnap(
   let minDeltaX = SNAP_THRESHOLD + 1;
   let minDeltaY = SNAP_THRESHOLD + 1;
 
+  // キャンバス原点 (0, 0) へのスナップ
+  // 左辺 → 0
+  if (Math.abs(movingEdges.left) < minDeltaX) {
+    minDeltaX = Math.abs(movingEdges.left);
+    result.x = 0;
+    result.snappedX = true;
+  }
+  // 上辺 → 0
+  if (Math.abs(movingEdges.top) < minDeltaY) {
+    minDeltaY = Math.abs(movingEdges.top);
+    result.y = 0;
+    result.snappedY = true;
+  }
+
   for (const target of targetRects) {
     const targetEdges = {
       left: target.x,
