@@ -1,5 +1,5 @@
 import { Scissors, Languages } from "lucide-react";
-import { setLocale } from "../i18n";
+import { setLocale, t } from "../i18n";
 import { useLocale } from "../hooks/useLocale";
 
 export function Toolbar() {
@@ -11,9 +11,10 @@ export function Toolbar() {
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Scissors size={24} className="text-blue-600" />
-        <h1 className="text-xl font-bold text-gray-800">CropTile</h1>
+      <div className="flex items-center gap-3">
+        <Scissors size={28} className="text-blue-600" />
+        <h1 className="text-2xl font-bold text-gray-800">CropTile</h1>
+        <span className="text-sm text-gray-500">{t("tagline")}</span>
       </div>
       <div className="flex items-center gap-1.5 text-sm text-gray-600">
         <Languages size={16} />

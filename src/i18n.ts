@@ -1,6 +1,7 @@
 const messages = {
   en: {
     // Toolbar
+    tagline: "Split. Arrange. Done.",
     download: "Download",
     saveAs: "Save As...",
 
@@ -76,6 +77,7 @@ const messages = {
   },
   ja: {
     // Toolbar
+    tagline: "切って、並べて、完成",
     download: "ダウンロード",
     saveAs: "名前を付けて保存...",
 
