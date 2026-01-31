@@ -160,7 +160,7 @@ const detectLocale = (): Locale => {
 };
 
 let currentLocale: Locale = detectLocale();
-let listeners: Set<() => void> = new Set();
+const listeners: Set<() => void> = new Set();
 
 export const t = (
   key: MessageKey,

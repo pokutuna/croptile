@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Download, Trash2, Pen, Move, ChevronDown } from "lucide-react";
+import { Download, Trash2, Pen, Move, ChevronDown, Undo2 } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { exportToPng } from "../../utils/image";
 import { LayoutCanvas } from "./LayoutCanvas";
@@ -36,6 +36,7 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
   const setHasCompletedTutorial = useAppStore(
     (state) => state.setHasCompletedTutorial,
   );
+  const undoLastPaintStroke = useAppStore((state) => state.undoLastPaintStroke);
 
   const getBlob = useCallback(async () => {
     const blob = await exportToPng(
@@ -150,6 +151,14 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
               className="w-16 h-4"
               title={`ペン幅: ${paintWidth}px`}
             />
+            <button
+              onClick={undoLastPaintStroke}
+              disabled={paintStrokes.length === 0}
+              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={16} />
+            </button>
           </div>
           <button
             onClick={clearLayout}

@@ -78,7 +78,7 @@ export function LayoutCanvas() {
   const paintColor = useAppStore((state) => state.paintColor);
   const paintWidth = useAppStore((state) => state.paintWidth);
   const addPaintStroke = useAppStore((state) => state.addPaintStroke);
-  const removePaintStroke = useAppStore((state) => state.removePaintStroke);
+  const undoLastPaintStroke = useAppStore((state) => state.undoLastPaintStroke);
   const hasCompletedTutorial = useAppStore(
     (state) => state.hasCompletedTutorial,
   );
@@ -385,6 +385,13 @@ export function LayoutCanvas() {
   // キーボード操作
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Z / Cmd+Z でペンストロークを1つ戻す
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        undoLastPaintStroke();
+        return;
+      }
+
       if (!selectedPlacedCellId) return;
 
       const placed = placedCells.find((pc) => pc.id === selectedPlacedCellId);
@@ -440,6 +447,7 @@ export function LayoutCanvas() {
     placedCells,
     updatePlacedCellPosition,
     removePlacedCell,
+    undoLastPaintStroke,
   ]);
 
   return (
@@ -690,7 +698,6 @@ export function LayoutCanvas() {
                       onMouseDown={handleMouseDown}
                       onPaintStart={handleCellPaintStart}
                       onRemove={removePlacedCell}
-                      onRemovePaintStroke={removePaintStroke}
                     />
                   ))}
 

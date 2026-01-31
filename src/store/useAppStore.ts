@@ -7,7 +7,7 @@ import type {
   PlacedCell,
   PaintStroke,
 } from "../types";
-import { calculateCells } from "../utils/geometry";
+import { calculateCells, assignCellLabels } from "../utils/geometry";
 
 type CutDirection = "horizontal" | "vertical";
 
@@ -84,6 +84,7 @@ interface AppState {
   addPaintStroke: (stroke: Omit<PaintStroke, "id">) => void;
   removePaintStroke: (id: string) => void;
   removePaintStrokesForCell: (placedCellId: string) => void;
+  undoLastPaintStroke: () => void;
 
   // セル再計算
   recalculateCells: () => void;
@@ -342,6 +343,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
     }));
   },
 
+  undoLastPaintStroke: () => {
+    set((state) => ({
+      paintStrokes: state.paintStrokes.slice(0, -1),
+    }));
+  },
+
   recalculateCells: () => {
     const state = get();
     const newCells: Cell[] = [];
@@ -356,80 +363,14 @@ export const useAppStore = create<AppState>()((set, get) => ({
       );
 
       const rawCells = calculateCells(image, imageHLines, imageVLines);
-
-      // この画像の既存セル
       const existingImageCells = state.cells.filter(
         (c) => c.imageId === image.id,
       );
+      const nextNumber = newNextCellNumberByImage[image.id] ?? 1;
 
-      // この画像の次の番号を取得（なければ1から）
-      let nextNumber = newNextCellNumberByImage[image.id] ?? 1;
-
-      // 新しいセルに番号を割り当て
-      // 1. 完全一致するrectがあれば番号を継承
-      // 2. 新しいセルが既存セルに含まれていれば、その番号を継承（分割時）
-      // 3. それ以外は新しい番号
-      const usedLabels = new Set<string>();
-
-      for (const rawCell of rawCells) {
-        const r = rawCell.rect;
-
-        // 完全一致を探す
-        let matchedLabel: string | undefined;
-        for (const existing of existingImageCells) {
-          const e = existing.rect;
-          if (
-            e.x === r.x &&
-            e.y === r.y &&
-            e.width === r.width &&
-            e.height === r.height
-          ) {
-            matchedLabel = existing.label;
-            break;
-          }
-        }
-
-        // 完全一致がなければ、新しいセルを含む既存セルを探す（分割の親）
-        if (!matchedLabel) {
-          for (const existing of existingImageCells) {
-            const e = existing.rect;
-            // 新しいセルが既存セルの中に含まれているか
-            if (
-              r.x >= e.x &&
-              r.y >= e.y &&
-              r.x + r.width <= e.x + e.width &&
-              r.y + r.height <= e.y + e.height
-            ) {
-              // まだ使われていないラベルなら継承
-              if (!usedLabels.has(existing.label)) {
-                matchedLabel = existing.label;
-                break;
-              }
-            }
-          }
-        }
-
-        if (matchedLabel) {
-          usedLabels.add(matchedLabel);
-          newCells.push({
-            ...rawCell,
-            id: `${rawCell.imageId}-${matchedLabel}`,
-            label: matchedLabel,
-          });
-        } else {
-          // 新規セル → 新しい番号を割り当て
-          const label = String(nextNumber);
-          usedLabels.add(label);
-          newCells.push({
-            ...rawCell,
-            id: `${rawCell.imageId}-${label}`,
-            label,
-          });
-          nextNumber++;
-        }
-      }
-
-      newNextCellNumberByImage[image.id] = nextNumber;
+      const result = assignCellLabels(rawCells, existingImageCells, nextNumber);
+      newCells.push(...result.cells);
+      newNextCellNumberByImage[image.id] = result.nextNumber;
     }
 
     set({

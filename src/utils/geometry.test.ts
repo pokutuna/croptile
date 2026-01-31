@@ -5,6 +5,7 @@ import {
   isPointInRect,
   doRectsIntersect,
   getBoundingBox,
+  assignCellLabels,
 } from "./geometry";
 import type { ScoreImage, HorizontalLine, VerticalLine } from "../types";
 
@@ -262,5 +263,102 @@ describe("getBoundingBox", () => {
       width: 250,
       height: 250,
     });
+  });
+});
+
+describe("assignCellLabels", () => {
+  const createCell = (
+    label: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) => ({
+    id: `img1-${label}`,
+    imageId: "img1",
+    label,
+    rect: { x, y, width, height },
+  });
+
+  it("既存セルがない場合、1から順番にラベルを割り当てる", () => {
+    const rawCells = [
+      createCell("", 0, 0, 100, 100),
+      createCell("", 100, 0, 100, 100),
+    ];
+    const result = assignCellLabels(rawCells, [], 1);
+
+    expect(result.cells).toHaveLength(2);
+    expect(result.cells[0].label).toBe("1");
+    expect(result.cells[1].label).toBe("2");
+    expect(result.nextNumber).toBe(3);
+  });
+
+  it("完全一致するセルがあれば、そのラベルを継承する", () => {
+    const rawCells = [createCell("", 0, 0, 100, 100)];
+    const existingCells = [createCell("5", 0, 0, 100, 100)];
+    const result = assignCellLabels(rawCells, existingCells, 10);
+
+    expect(result.cells[0].label).toBe("5");
+    expect(result.nextNumber).toBe(10); // 新規割り当てなし
+  });
+
+  it("分割時、親セルのラベルを継承する", () => {
+    // 既存: 大きなセル (0,0)-(200,100) ラベル "3"
+    // 新規: 左半分 (0,0)-(100,100), 右半分 (100,0)-(200,100)
+    const existingCells = [createCell("3", 0, 0, 200, 100)];
+    const rawCells = [
+      createCell("", 0, 0, 100, 100),
+      createCell("", 100, 0, 100, 100),
+    ];
+    const result = assignCellLabels(rawCells, existingCells, 5);
+
+    // 最初の子セルが "3" を継承、2番目は新規番号
+    expect(result.cells[0].label).toBe("3");
+    expect(result.cells[1].label).toBe("5");
+    expect(result.nextNumber).toBe(6);
+  });
+
+  it("既に使われたラベルは継承しない", () => {
+    // 2つの新セルが同じ親を持つ場合、最初のセルだけがラベルを継承
+    const existingCells = [createCell("3", 0, 0, 200, 200)];
+    const rawCells = [
+      createCell("", 0, 0, 100, 100),
+      createCell("", 100, 0, 100, 100),
+      createCell("", 0, 100, 100, 100),
+      createCell("", 100, 100, 100, 100),
+    ];
+    const result = assignCellLabels(rawCells, existingCells, 10);
+
+    expect(result.cells[0].label).toBe("3"); // 継承
+    expect(result.cells[1].label).toBe("10"); // 新規
+    expect(result.cells[2].label).toBe("11"); // 新規
+    expect(result.cells[3].label).toBe("12"); // 新規
+    expect(result.nextNumber).toBe(13);
+  });
+
+  it("複数の既存セルから適切なラベルを継承する", () => {
+    // 既存: 2つのセル
+    const existingCells = [
+      createCell("1", 0, 0, 100, 100),
+      createCell("2", 100, 0, 100, 100),
+    ];
+    // 新規: 同じ2つのセル（変更なし）
+    const rawCells = [
+      createCell("", 0, 0, 100, 100),
+      createCell("", 100, 0, 100, 100),
+    ];
+    const result = assignCellLabels(rawCells, existingCells, 5);
+
+    expect(result.cells[0].label).toBe("1");
+    expect(result.cells[1].label).toBe("2");
+    expect(result.nextNumber).toBe(5); // 新規割り当てなし
+  });
+
+  it("nextNumber から新しいラベルが割り当てられる", () => {
+    const rawCells = [createCell("", 0, 0, 100, 100)];
+    const result = assignCellLabels(rawCells, [], 42);
+
+    expect(result.cells[0].label).toBe("42");
+    expect(result.nextNumber).toBe(43);
   });
 });

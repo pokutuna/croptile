@@ -196,6 +196,80 @@ export function doRectsIntersect(
   );
 }
 
+// セルにラベルを割り当てる
+// 1. 完全一致する rect があれば番号を継承
+// 2. 新しいセルが既存セルに含まれていれば、その番号を継承（分割時）
+// 3. それ以外は新しい番号
+export function assignCellLabels(
+  rawCells: Cell[],
+  existingCells: Cell[],
+  nextNumber: number,
+): { cells: Cell[]; nextNumber: number } {
+  const result: Cell[] = [];
+  const usedLabels = new Set<string>();
+  let currentNextNumber = nextNumber;
+
+  for (const rawCell of rawCells) {
+    const r = rawCell.rect;
+
+    // 完全一致を探す
+    let matchedLabel: string | undefined;
+    for (const existing of existingCells) {
+      const e = existing.rect;
+      if (
+        e.x === r.x &&
+        e.y === r.y &&
+        e.width === r.width &&
+        e.height === r.height
+      ) {
+        matchedLabel = existing.label;
+        break;
+      }
+    }
+
+    // 完全一致がなければ、新しいセルを含む既存セルを探す（分割の親）
+    if (!matchedLabel) {
+      for (const existing of existingCells) {
+        const e = existing.rect;
+        // 新しいセルが既存セルの中に含まれているか
+        if (
+          r.x >= e.x &&
+          r.y >= e.y &&
+          r.x + r.width <= e.x + e.width &&
+          r.y + r.height <= e.y + e.height
+        ) {
+          // まだ使われていないラベルなら継承
+          if (!usedLabels.has(existing.label)) {
+            matchedLabel = existing.label;
+            break;
+          }
+        }
+      }
+    }
+
+    if (matchedLabel) {
+      usedLabels.add(matchedLabel);
+      result.push({
+        ...rawCell,
+        id: `${rawCell.imageId}-${matchedLabel}`,
+        label: matchedLabel,
+      });
+    } else {
+      // 新規セル → 新しい番号を割り当て
+      const label = String(currentNextNumber);
+      usedLabels.add(label);
+      result.push({
+        ...rawCell,
+        id: `${rawCell.imageId}-${label}`,
+        label,
+      });
+      currentNextNumber++;
+    }
+  }
+
+  return { cells: result, nextNumber: currentNextNumber };
+}
+
 // バウンディングボックスを計算
 export function getBoundingBox(
   rects: { x: number; y: number; width: number; height: number }[],

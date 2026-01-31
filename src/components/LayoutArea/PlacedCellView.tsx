@@ -33,7 +33,6 @@ interface PlacedCellViewProps {
     cellY: number,
   ) => void;
   onRemove: (id: string) => void;
-  onRemovePaintStroke: (id: string) => void;
 }
 
 // ポイント配列からSVGパスを生成
@@ -57,7 +56,6 @@ export const PlacedCellView = memo(function PlacedCellView({
   onMouseDown,
   onPaintStart,
   onRemove,
-  onRemovePaintStroke,
 }: PlacedCellViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(
@@ -166,13 +164,6 @@ export const PlacedCellView = memo(function PlacedCellView({
             strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
-            className={paintMode ? "pointer-events-auto cursor-pointer" : ""}
-            onClick={(e) => {
-              if (paintMode) {
-                e.stopPropagation();
-                onRemovePaintStroke(stroke.id);
-              }
-            }}
           />
         ))}
 
