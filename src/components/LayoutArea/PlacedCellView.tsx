@@ -1,5 +1,5 @@
-import { useEffect, useRef, memo } from "react";
-import type { Cell } from "../../types";
+import { useEffect, useRef, memo, useState, useCallback } from "react";
+import type { Cell, PaintStroke } from "../../types";
 
 interface PlacedCellInfo {
   id: string;
@@ -10,22 +10,58 @@ interface PlacedCellInfo {
   image: { dataUrl: string };
 }
 
+interface PaintingState {
+  placedCellId: string;
+  points: { x: number; y: number }[];
+}
+
 interface PlacedCellViewProps {
   placed: PlacedCellInfo;
   scale: number;
   isSelected: boolean;
+  paintMode: boolean;
+  paintStrokes: PaintStroke[];
+  paintingState: PaintingState | null;
+  paintColor: string;
+  paintWidth: number;
   onMouseDown: (e: React.MouseEvent, placedCellId: string) => void;
+  onPaintStart: (
+    e: React.MouseEvent,
+    placedCellId: string,
+    cellX: number,
+    cellY: number,
+  ) => void;
   onRemove: (id: string) => void;
+  onRemovePaintStroke: (id: string) => void;
+}
+
+// ポイント配列からSVGパスを生成
+function pointsToPath(points: { x: number; y: number }[]): string {
+  if (points.length < 2) return "";
+  const [first, ...rest] = points;
+  return (
+    `M ${first.x} ${first.y} ` + rest.map((p) => `L ${p.x} ${p.y}`).join(" ")
+  );
 }
 
 export const PlacedCellView = memo(function PlacedCellView({
   placed,
   scale,
   isSelected,
+  paintMode,
+  paintStrokes,
+  paintingState,
+  paintColor,
+  paintWidth,
   onMouseDown,
+  onPaintStart,
   onRemove,
+  onRemovePaintStroke,
 }: PlacedCellViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   // 画像の描画は cellId と image が変わった時のみ
   useEffect(() => {
@@ -55,9 +91,40 @@ export const PlacedCellView = memo(function PlacedCellView({
     img.src = placed.image.dataUrl;
   }, [placed.cellId, placed.image.dataUrl, placed.cell.rect]);
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (paintMode) {
+      // ペンモード: 描画開始
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / scale;
+      const y = (e.clientY - rect.top) / scale;
+      onPaintStart(e, placed.id, x, y);
+    } else {
+      // 通常モード: ドラッグ開始
+      onMouseDown(e, placed.id);
+    }
+  };
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!paintMode) {
+        setCursorPos(null);
+        return;
+      }
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / scale;
+      const y = (e.clientY - rect.top) / scale;
+      setCursorPos({ x, y });
+    },
+    [paintMode, scale],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    setCursorPos(null);
+  }, []);
+
   return (
     <div
-      className={`absolute cursor-move select-none ${
+      className={`absolute select-none layout-canvas-area ${
         isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""
       }`}
       style={{
@@ -65,8 +132,11 @@ export const PlacedCellView = memo(function PlacedCellView({
         top: placed.y * scale,
         width: placed.cell.rect.width * scale,
         height: placed.cell.rect.height * scale,
+        cursor: paintMode ? "none" : "move",
       }}
-      onMouseDown={(e) => onMouseDown(e, placed.id)}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       <canvas
         ref={canvasRef}
@@ -76,6 +146,62 @@ export const PlacedCellView = memo(function PlacedCellView({
           height: placed.cell.rect.height * scale,
         }}
       />
+
+      {/* ペンストロークのSVGオーバーレイ */}
+      <svg
+        className="absolute inset-0 pointer-events-none"
+        width={placed.cell.rect.width * scale}
+        height={placed.cell.rect.height * scale}
+        viewBox={`0 0 ${placed.cell.rect.width} ${placed.cell.rect.height}`}
+        preserveAspectRatio="none"
+      >
+        {/* 確定済みストローク */}
+        {paintStrokes.map((stroke) => (
+          <path
+            key={stroke.id}
+            d={pointsToPath(stroke.points)}
+            stroke={stroke.color}
+            strokeWidth={stroke.width}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            className={paintMode ? "pointer-events-auto cursor-pointer" : ""}
+            onClick={(e) => {
+              if (paintMode) {
+                e.stopPropagation();
+                onRemovePaintStroke(stroke.id);
+              }
+            }}
+          />
+        ))}
+
+        {/* 描画中のストローク */}
+        {paintingState && paintingState.points.length >= 2 && (
+          <path
+            d={pointsToPath(paintingState.points)}
+            stroke={paintColor}
+            strokeWidth={paintWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        )}
+
+        {/* ペンサイズプレビュー（カーソル位置に半透明の円 + 青い外周線） */}
+        {paintMode && cursorPos && (
+          <circle
+            cx={cursorPos.x}
+            cy={cursorPos.y}
+            r={paintWidth / 2}
+            fill={paintColor}
+            fillOpacity={0.5}
+            stroke="#3b82f6"
+            strokeWidth={1.5}
+            strokeOpacity={0.7}
+          />
+        )}
+      </svg>
+
       <button
         className="absolute top-1 left-1 text-xs font-bold px-1.5 py-0.5 rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
         onClick={(e) => {

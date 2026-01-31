@@ -6,6 +6,7 @@ import type {
   VerticalLine,
   Cell,
   PlacedCell,
+  PaintStroke,
 } from "../types";
 import { calculateCells } from "../utils/geometry";
 
@@ -33,6 +34,12 @@ interface AppState {
   // レイアウト
   placedCells: PlacedCell[];
   selectedPlacedCellId: string | null;
+
+  // ペン（塗りつぶし）
+  paintStrokes: PaintStroke[];
+  paintMode: boolean;
+  paintColor: string;
+  paintWidth: number;
 
   // アクション - 画像
   addImage: (image: ScoreImage) => void;
@@ -66,6 +73,14 @@ interface AppState {
   setSelectedPlacedCell: (id: string | null) => void;
   clearLayout: () => void;
 
+  // アクション - ペン（塗りつぶし）
+  setPaintMode: (value: boolean) => void;
+  setPaintColor: (color: string) => void;
+  setPaintWidth: (width: number) => void;
+  addPaintStroke: (stroke: Omit<PaintStroke, "id">) => void;
+  removePaintStroke: (id: string) => void;
+  removePaintStrokesForCell: (placedCellId: string) => void;
+
   // セル再計算
   recalculateCells: () => void;
 }
@@ -77,7 +92,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       images: [],
       activeImageId: null,
-      cutDirection: "horizontal" as CutDirection,
+      cutDirection: "vertical" as CutDirection,
       useBackground: false,
       backgroundColor: "#ffffff",
       horizontalLines: [],
@@ -85,6 +100,10 @@ export const useAppStore = create<AppState>()(
       cells: [],
       placedCells: [],
       selectedPlacedCellId: null,
+      paintStrokes: [],
+      paintMode: false,
+      paintColor: "#ffffff",
+      paintWidth: 10,
 
       addImage: (image) => {
         set((state) => ({
@@ -201,28 +220,34 @@ export const useAppStore = create<AppState>()(
           return;
         }
 
-        // 新しい配置位置を計算（既存セルの右側に隙間なく配置）
+        // セルと画像を取得
+        const cell = state.cells.find((c) => c.id === cellId);
+        if (!cell) return;
+        const image = state.images.find((img) => img.id === cell.imageId);
+        if (!image) return;
+
+        // 新しい配置位置を計算（既存セルの下に隙間なく配置）
         let x = 0;
         let y = 0;
         if (state.placedCells.length > 0) {
-          const cell = state.cells.find((c) => c.id === cellId);
-          if (cell) {
-            // 最後に配置したセルの右側に配置
-            const lastPlaced = state.placedCells[state.placedCells.length - 1];
-            const lastCell = state.cells.find(
-              (c) => c.id === lastPlaced.cellId,
-            );
-            if (lastCell) {
-              x = lastPlaced.x + lastCell.rect.width;
-              y = lastPlaced.y;
-            }
-          }
+          // 最後に配置したセルの下に配置
+          const lastPlaced = state.placedCells[state.placedCells.length - 1];
+          x = lastPlaced.x;
+          y = lastPlaced.y + lastPlaced.rect.height;
         }
 
         set((state) => ({
           placedCells: [
             ...state.placedCells,
-            { id: generateId(), cellId, x, y },
+            {
+              id: generateId(),
+              cellId,
+              x,
+              y,
+              label: cell.label,
+              rect: { ...cell.rect },
+              imageDataUrl: image.dataUrl,
+            },
           ],
         }));
       },
@@ -238,6 +263,7 @@ export const useAppStore = create<AppState>()(
       removePlacedCell: (id) => {
         set((state) => ({
           placedCells: state.placedCells.filter((pc) => pc.id !== id),
+          paintStrokes: state.paintStrokes.filter((s) => s.placedCellId !== id),
           selectedPlacedCellId:
             state.selectedPlacedCellId === id
               ? null
@@ -250,7 +276,42 @@ export const useAppStore = create<AppState>()(
       },
 
       clearLayout: () => {
-        set({ placedCells: [], selectedPlacedCellId: null });
+        set({ placedCells: [], selectedPlacedCellId: null, paintStrokes: [] });
+      },
+
+      setPaintMode: (value) => {
+        set({ paintMode: value });
+      },
+
+      setPaintColor: (color) => {
+        set({ paintColor: color });
+      },
+
+      setPaintWidth: (width) => {
+        set({ paintWidth: width });
+      },
+
+      addPaintStroke: (stroke) => {
+        set((state) => ({
+          paintStrokes: [
+            ...state.paintStrokes,
+            { ...stroke, id: generateId() },
+          ],
+        }));
+      },
+
+      removePaintStroke: (id) => {
+        set((state) => ({
+          paintStrokes: state.paintStrokes.filter((s) => s.id !== id),
+        }));
+      },
+
+      removePaintStrokesForCell: (placedCellId) => {
+        set((state) => ({
+          paintStrokes: state.paintStrokes.filter(
+            (s) => s.placedCellId !== placedCellId,
+          ),
+        }));
       },
 
       recalculateCells: () => {
@@ -269,14 +330,8 @@ export const useAppStore = create<AppState>()(
           newCells.push(...cells);
         }
 
-        // 削除されたセルをplacedCellsから除去
-        const validCellIds = new Set(newCells.map((c) => c.id));
-        set((state) => ({
-          cells: newCells,
-          placedCells: state.placedCells.filter((pc) =>
-            validCellIds.has(pc.cellId),
-          ),
-        }));
+        // セルのみ更新、placedCellsは維持（無効なセルは表示時にスキップされる）
+        set({ cells: newCells });
       },
     }),
     {
@@ -287,6 +342,7 @@ export const useAppStore = create<AppState>()(
         horizontalLines: state.horizontalLines,
         verticalLines: state.verticalLines,
         placedCells: state.placedCells,
+        paintStrokes: state.paintStrokes,
       }),
     },
   ),

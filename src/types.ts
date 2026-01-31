@@ -36,12 +36,30 @@ export interface Cell {
   };
 }
 
-// レイアウト上の配置
+// レイアウト上の配置（セルのコピーを保持）
 export interface PlacedCell {
   id: string;
-  cellId: string;
+  cellId: string; // 元のセルID（重複チェック用）
   x: number;
   y: number;
+  // コピーされたセル情報
+  label: string;
+  rect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  imageDataUrl: string;
+}
+
+// ペンストローク（線の軌跡）- セルに紐づく
+export interface PaintStroke {
+  id: string;
+  placedCellId: string; // 紐づくPlacedCellのID
+  points: { x: number; y: number }[]; // セル内の相対座標
+  color: string;
+  width: number;
 }
 
 // カットモードの種類

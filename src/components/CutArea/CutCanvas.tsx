@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Scissors } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Scissors, Maximize } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { findVerticalLineBounds } from "../../utils/geometry";
 import type { DraggingLine } from "../../types";
@@ -9,7 +9,7 @@ import { CellOverlay } from "./CellOverlay";
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 3;
 const SCALE_STEP = 0.25;
-const GUTTER_SIZE = 8; // 左端・上端のカット領域の幅
+const GUTTER_SIZE = 16; // 左端・上端のカット領域の幅
 
 export function CutCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -98,6 +98,17 @@ export function CutCanvas() {
   const handleResetZoom = useCallback(() => {
     setScale(1);
   }, []);
+
+  const handleFitToView = useCallback(() => {
+    if (!activeImage || !containerRef.current) return;
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth - GUTTER_SIZE - 20;
+    const containerHeight = container.clientHeight - GUTTER_SIZE - 20;
+    const scaleX = containerWidth / activeImage.width;
+    const scaleY = containerHeight / activeImage.height;
+    const fitScale = Math.min(scaleX, scaleY, MAX_SCALE);
+    setScale(Math.max(MIN_SCALE, fitScale));
+  }, [activeImage]);
 
   // マウス位置を更新
   const handleMouseMove = useCallback(
@@ -300,29 +311,43 @@ export function CutCanvas() {
         <button
           onClick={handleResetZoom}
           className="p-1 rounded hover:bg-gray-300 ml-2"
-          title="リセット"
+          title="100%にリセット"
         >
           <RotateCcw size={18} />
+        </button>
+        <button
+          onClick={handleFitToView}
+          className="p-1 rounded hover:bg-gray-300"
+          title="全体を表示"
+        >
+          <Maximize size={18} />
         </button>
       </div>
 
       {/* キャンバス領域 */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto bg-gray-100 p-4"
+        className="flex-1 overflow-auto"
+        style={{
+          backgroundColor: "#e5e5e5",
+          backgroundImage:
+            "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+          backgroundSize: "16px 16px",
+          backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+        }}
         onMouseUp={handleMouseUp}
       >
-        <div className="inline-flex flex-col">
+        <div className="inline-block align-top">
           {/* 上端ガター（縦線用） */}
           <div className="flex">
             <div
-              className="flex items-center justify-center"
+              className="flex items-center justify-center bg-gray-300"
               style={{ width: GUTTER_SIZE, height: GUTTER_SIZE }}
             >
-              <Scissors size={8} className="text-gray-400" />
+              <Scissors size={12} className="text-gray-500" />
             </div>
             <div
-              className="cursor-crosshair hover:bg-gray-100 transition-colors relative"
+              className="cursor-crosshair bg-gray-300 hover:bg-gray-400 transition-colors relative flex items-center overflow-hidden"
               style={{
                 width: activeImage.width * scale,
                 height: GUTTER_SIZE,
@@ -332,6 +357,21 @@ export function CutCanvas() {
               onMouseLeave={handleGutterMouseLeave}
               title="クリックで縦カット線を追加"
             >
+              {/* ハサミアイコンを100px間隔で配置 */}
+              {Array.from(
+                { length: Math.floor((activeImage.width * scale) / 100) },
+                (_, i) => (
+                  <Scissors
+                    key={i}
+                    size={10}
+                    className="text-gray-500 absolute pointer-events-none"
+                    style={{
+                      left: (i + 1) * 100 - 5,
+                      transform: "rotate(90deg)",
+                    }}
+                  />
+                ),
+              )}
               {gutterPos?.type === "top" && (
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-green-500 pointer-events-none"
@@ -344,7 +384,7 @@ export function CutCanvas() {
           <div className="flex">
             {/* 左端ガター（横線用） */}
             <div
-              className="cursor-crosshair hover:bg-gray-100 transition-colors relative"
+              className="cursor-crosshair bg-gray-300 hover:bg-gray-400 transition-colors relative flex flex-col items-center overflow-hidden"
               style={{
                 width: GUTTER_SIZE,
                 height: activeImage.height * scale,
@@ -354,6 +394,18 @@ export function CutCanvas() {
               onMouseLeave={handleGutterMouseLeave}
               title="クリックで横カット線を追加"
             >
+              {/* ハサミアイコンを100px間隔で配置 */}
+              {Array.from(
+                { length: Math.floor((activeImage.height * scale) / 100) },
+                (_, i) => (
+                  <Scissors
+                    key={i}
+                    size={10}
+                    className="text-gray-500 absolute pointer-events-none"
+                    style={{ top: (i + 1) * 100 - 5 }}
+                  />
+                ),
+              )}
               {gutterPos?.type === "left" && (
                 <div
                   className="absolute left-0 right-0 h-0.5 bg-blue-500 pointer-events-none"

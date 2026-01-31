@@ -1,5 +1,11 @@
 import { useCallback, useRef } from "react";
-import { ImagePlus, Trash2, X, Minus, GripVertical } from "lucide-react";
+import {
+  ImagePlus,
+  Trash2,
+  X,
+  FlipHorizontal2,
+  FlipVertical2,
+} from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { loadImage } from "../../utils/image";
 import { CutCanvas } from "./CutCanvas";
@@ -136,17 +142,6 @@ export function CutArea({ widthPercent }: CutAreaProps) {
         {/* カット方向トグル */}
         <div className="flex items-center rounded border border-gray-300 overflow-hidden">
           <button
-            onClick={() => setCutDirection("horizontal")}
-            className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
-              cutDirection === "horizontal"
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-            title="横カット"
-          >
-            <Minus size={16} />横
-          </button>
-          <button
             onClick={() => setCutDirection("vertical")}
             className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
               cutDirection === "vertical"
@@ -155,7 +150,18 @@ export function CutArea({ widthPercent }: CutAreaProps) {
             }`}
             title="縦カット"
           >
-            <GripVertical size={16} />縦
+            <FlipHorizontal2 size={16} />縦
+          </button>
+          <button
+            onClick={() => setCutDirection("horizontal")}
+            className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
+              cutDirection === "horizontal"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+            title="横カット"
+          >
+            <FlipVertical2 size={16} />横
           </button>
         </div>
 
