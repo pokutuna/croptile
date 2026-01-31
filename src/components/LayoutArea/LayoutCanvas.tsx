@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRef } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Maximize,
+  MoveHorizontal,
+  MoveVertical,
+  Check,
+  Trash2,
+} from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
 import type { Cell } from "../../types";
@@ -54,6 +63,8 @@ export function LayoutCanvas() {
     position: number;
   } | null>(null);
 
+  const images = useAppStore((state) => state.images);
+  const cells = useAppStore((state) => state.cells);
   const placedCells = useAppStore((state) => state.placedCells);
   const selectedPlacedCellId = useAppStore(
     (state) => state.selectedPlacedCellId,
@@ -68,6 +79,10 @@ export function LayoutCanvas() {
   const paintWidth = useAppStore((state) => state.paintWidth);
   const addPaintStroke = useAppStore((state) => state.addPaintStroke);
   const removePaintStroke = useAppStore((state) => state.removePaintStroke);
+  const hasCompletedTutorial = useAppStore(
+    (state) => state.hasCompletedTutorial,
+  );
+  const hasCleared = useAppStore((state) => state.hasCleared);
   const updatePlacedCellPosition = useAppStore(
     (state) => state.updatePlacedCellPosition,
   );
@@ -135,6 +150,22 @@ export function LayoutCanvas() {
     const scaleX = containerWidth / boundingBox.width;
     const scaleY = containerHeight / boundingBox.height;
     const fitScale = Math.min(scaleX, scaleY, MAX_SCALE);
+    setScale(Math.max(MIN_SCALE, fitScale));
+  }, [boundingBox]);
+
+  const handleFitToWidth = useCallback(() => {
+    if (!boundingBox || !containerRef.current) return;
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth - GUTTER_SIZE - 40;
+    const fitScale = Math.min(containerWidth / boundingBox.width, MAX_SCALE);
+    setScale(Math.max(MIN_SCALE, fitScale));
+  }, [boundingBox]);
+
+  const handleFitToHeight = useCallback(() => {
+    if (!boundingBox || !containerRef.current) return;
+    const container = containerRef.current;
+    const containerHeight = container.clientHeight - GUTTER_SIZE - 40;
+    const fitScale = Math.min(containerHeight / boundingBox.height, MAX_SCALE);
     setScale(Math.max(MIN_SCALE, fitScale));
   }, [boundingBox]);
 
@@ -443,6 +474,22 @@ export function LayoutCanvas() {
         >
           <Maximize size={18} />
         </button>
+        <button
+          onClick={handleFitToWidth}
+          disabled={!boundingBox}
+          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={t("fitToWidth")}
+        >
+          <MoveHorizontal size={18} />
+        </button>
+        <button
+          onClick={handleFitToHeight}
+          disabled={!boundingBox}
+          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={t("fitToHeight")}
+        >
+          <MoveVertical size={18} />
+        </button>
 
         {/* 背景を塗りつぶす */}
         <div className="flex items-center gap-2 ml-auto">
@@ -482,7 +529,10 @@ export function LayoutCanvas() {
         </div>
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-auto bg-gray-100">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto bg-gray-100 relative"
+      >
         <div className="inline-flex flex-col min-w-full min-h-full">
           {/* 上ガター（縦ガイド線用） */}
           <div className="flex sticky top-0 z-10">
@@ -597,11 +647,7 @@ export function LayoutCanvas() {
                     : `${Math.round(gutterHover.position)}px`}
                 </div>
               )}
-              {placedCellsWithInfo.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-sm text-center px-4">
-                  {t("clickToAddToLayout")}
-                </div>
-              ) : (
+              {placedCellsWithInfo.length > 0 && (
                 <>
                   {/* 背景色（オプション） */}
                   {useBackground && boundingBox && (
@@ -711,6 +757,104 @@ export function LayoutCanvas() {
             </div>
           </div>
         </div>
+
+        {/* チュートリアル（配置セルがない時のみ表示） */}
+        {placedCellsWithInfo.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-gray-600 text-sm space-y-3 bg-white/95 rounded-lg p-5 shadow-md pointer-events-auto whitespace-nowrap">
+              <div className="flex items-start gap-2">
+                {hasCompletedTutorial || images.length > 0 ? (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                    <Check size={12} />
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
+                    1
+                  </span>
+                )}
+                <span>{t("tutorialStep1")}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                {hasCompletedTutorial || cells.length > 1 ? (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                    <Check size={12} />
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
+                    2
+                  </span>
+                )}
+                <span>{t("tutorialStep2")}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                {hasCompletedTutorial || hasCleared ? (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                    <Check size={12} />
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
+                    3
+                  </span>
+                )}
+                <span>
+                  {t("tutorialStep3Pre")}{" "}
+                  <span className="inline-block px-1.5 py-0.5 bg-green-500 text-white text-xs font-bold rounded">
+                    {t("addCell")}
+                  </span>{" "}
+                  {t("tutorialStep3Post")}
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                {hasCompletedTutorial || hasCleared ? (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                    <Check size={12} />
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
+                    4
+                  </span>
+                )}
+                <div>
+                  <div>{t("tutorialStep4")}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {t("tutorialStep4Sub")}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                {hasCompletedTutorial ? (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                    <Check size={12} />
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
+                    5
+                  </span>
+                )}
+                <span>{t("tutorialStep5")}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                {hasCompletedTutorial || hasCleared ? (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                    <Check size={12} />
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
+                    6
+                  </span>
+                )}
+                <span>
+                  {t("tutorialStep6Pre")}
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded mx-1">
+                    <Trash2 size={10} />
+                    {t("clear")}
+                  </span>
+                  {t("tutorialStep6Post")}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

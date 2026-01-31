@@ -1,10 +1,20 @@
 import { useCallback } from "react";
-import { Download, Trash2, Pen, Move } from "lucide-react";
+import { Download, Trash2, Pen, Move, ChevronDown } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { exportToPng } from "../../utils/image";
 import { LayoutCanvas } from "./LayoutCanvas";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
+
+// showSaveFilePicker の型定義
+declare global {
+  interface Window {
+    showSaveFilePicker?: (options?: {
+      suggestedName?: string;
+      types?: { description: string; accept: Record<string, string[]> }[];
+    }) => Promise<FileSystemFileHandle>;
+  }
+}
 
 interface LayoutAreaProps {
   widthPercent: number;
@@ -23,8 +33,11 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
   const setPaintMode = useAppStore((state) => state.setPaintMode);
   const setPaintColor = useAppStore((state) => state.setPaintColor);
   const setPaintWidth = useAppStore((state) => state.setPaintWidth);
+  const setHasCompletedTutorial = useAppStore(
+    (state) => state.setHasCompletedTutorial,
+  );
 
-  const handleExport = useCallback(async () => {
+  const getBlob = useCallback(async () => {
     const blob = await exportToPng(
       placedCells,
       useBackground ? backgroundColor : null,
@@ -32,16 +45,59 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
     );
     if (!blob) {
       alert("No cells to export");
-      return;
+      return null;
     }
+    return blob;
+  }, [placedCells, useBackground, backgroundColor, paintStrokes]);
+
+  // 通常のダウンロード
+  const handleDownload = useCallback(async () => {
+    const blob = await getBlob();
+    if (!blob) return;
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "score-export.png";
+    a.download = "croptile-export.png";
     a.click();
     URL.revokeObjectURL(url);
-  }, [placedCells, useBackground, backgroundColor, paintStrokes]);
+    setHasCompletedTutorial(true);
+  }, [getBlob, setHasCompletedTutorial]);
+
+  // 保存場所を選ぶダイアログ（対応ブラウザのみ）
+  const handleSaveAs = useCallback(async () => {
+    const blob = await getBlob();
+    if (!blob) return;
+
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: "croptile-export.png",
+          types: [
+            {
+              description: "PNG Image",
+              accept: { "image/png": [".png"] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        setHasCompletedTutorial(true);
+      } catch (e) {
+        // ユーザーがキャンセルした場合など
+        if ((e as Error).name !== "AbortError") {
+          console.error("Save failed:", e);
+        }
+      }
+    } else {
+      // 非対応ブラウザは通常ダウンロードにフォールバック
+      handleDownload();
+    }
+  }, [getBlob, handleDownload, setHasCompletedTutorial]);
+
+  const supportsSaveAs =
+    typeof window !== "undefined" && !!window.showSaveFilePicker;
 
   return (
     <div
@@ -104,14 +160,26 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
             <Trash2 size={16} />
             {t("clear")}
           </button>
-          <button
-            onClick={handleExport}
-            disabled={placedCells.length === 0}
-            className="flex items-center gap-1 px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            <Download size={16} />
-            {t("export")}
-          </button>
+          <div className="flex gap-0.5 bg-gray-100 rounded">
+            <button
+              onClick={handleDownload}
+              disabled={placedCells.length === 0}
+              className={`flex items-center gap-1 px-3 py-1 text-sm bg-green-500 text-white hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed ${supportsSaveAs ? "rounded-l" : "rounded"}`}
+            >
+              <Download size={16} />
+              {t("download")}
+            </button>
+            {supportsSaveAs && (
+              <button
+                onClick={handleSaveAs}
+                disabled={placedCells.length === 0}
+                className="flex items-center px-1 py-1 text-sm bg-green-500 text-white rounded-r hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                title={t("saveAs")}
+              >
+                <ChevronDown size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <LayoutCanvas />

@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Scissors, Maximize } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Scissors,
+  Maximize,
+  MoveHorizontal,
+  MoveVertical,
+} from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { findCellBoundsAtPoint } from "../../utils/geometry";
 import type { DraggingLine } from "../../types";
@@ -118,6 +126,22 @@ export function CutCanvas() {
     const scaleX = containerWidth / activeImage.width;
     const scaleY = containerHeight / activeImage.height;
     const fitScale = Math.min(scaleX, scaleY, MAX_SCALE);
+    setScale(Math.max(MIN_SCALE, fitScale));
+  }, [activeImage]);
+
+  const handleFitToWidth = useCallback(() => {
+    if (!activeImage || !containerRef.current) return;
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth - GUTTER_SIZE - 20;
+    const fitScale = Math.min(containerWidth / activeImage.width, MAX_SCALE);
+    setScale(Math.max(MIN_SCALE, fitScale));
+  }, [activeImage]);
+
+  const handleFitToHeight = useCallback(() => {
+    if (!activeImage || !containerRef.current) return;
+    const container = containerRef.current;
+    const containerHeight = container.clientHeight - GUTTER_SIZE - 20;
+    const fitScale = Math.min(containerHeight / activeImage.height, MAX_SCALE);
     setScale(Math.max(MIN_SCALE, fitScale));
   }, [activeImage]);
 
@@ -352,6 +376,20 @@ export function CutCanvas() {
         >
           <Maximize size={18} />
         </button>
+        <button
+          onClick={handleFitToWidth}
+          className="p-1 rounded hover:bg-gray-300"
+          title={t("fitToWidth")}
+        >
+          <MoveHorizontal size={18} />
+        </button>
+        <button
+          onClick={handleFitToHeight}
+          className="p-1 rounded hover:bg-gray-300"
+          title={t("fitToHeight")}
+        >
+          <MoveVertical size={18} />
+        </button>
       </div>
 
       {/* キャンバス領域 */}
@@ -371,11 +409,9 @@ export function CutCanvas() {
           {/* 上端ガター（縦線用） */}
           <div className="flex">
             <div
-              className="flex items-center justify-center bg-gray-300"
+              className="bg-gray-300"
               style={{ width: GUTTER_SIZE, height: GUTTER_SIZE }}
-            >
-              <Scissors size={12} className="text-gray-500" />
-            </div>
+            />
             <div
               className="cursor-crosshair bg-gray-300 hover:bg-gray-400 transition-colors relative flex items-center overflow-hidden"
               style={{
@@ -387,21 +423,71 @@ export function CutCanvas() {
               onMouseLeave={handleGutterMouseLeave}
               title={t("clickToAddVerticalLine")}
             >
-              {/* ハサミアイコンを100px間隔で配置 */}
-              {Array.from(
-                { length: Math.floor((activeImage.width * scale) / 100) },
-                (_, i) => (
-                  <Scissors
-                    key={i}
-                    size={10}
-                    className="text-gray-500 absolute pointer-events-none"
-                    style={{
-                      left: (i + 1) * 100 - 5,
-                      transform: "rotate(90deg)",
-                    }}
-                  />
-                ),
-              )}
+              {/* 100pxごとに区切り、ハサミ2つまたはテキストを交互配置 */}
+              {(() => {
+                const items: React.ReactNode[] = [];
+                const totalWidth = activeImage.width * scale;
+                const cellSize = 100;
+                const count = Math.ceil(totalWidth / cellSize);
+
+                for (let i = 0; i < count; i++) {
+                  const cellStart = i * cellSize;
+                  if (cellStart > totalWidth) break;
+
+                  if (i % 2 === 0) {
+                    // ハサミ2つ: 空白・ハサミ・空白(中央)・ハサミ・空白
+                    const pos1 = cellStart + cellSize * 0.25;
+                    const pos2 = cellStart + cellSize * 0.75;
+                    if (pos1 < totalWidth) {
+                      items.push(
+                        <Scissors
+                          key={`s1-${i}`}
+                          size={10}
+                          className="text-gray-500 absolute pointer-events-none"
+                          style={{
+                            left: pos1,
+                            top: "50%",
+                            transform: "translate(-50%, -50%) rotate(90deg)",
+                          }}
+                        />,
+                      );
+                    }
+                    if (pos2 < totalWidth) {
+                      items.push(
+                        <Scissors
+                          key={`s2-${i}`}
+                          size={10}
+                          className="text-gray-500 absolute pointer-events-none"
+                          style={{
+                            left: pos2,
+                            top: "50%",
+                            transform: "translate(-50%, -50%) rotate(90deg)",
+                          }}
+                        />,
+                      );
+                    }
+                  } else {
+                    // テキスト（中央）
+                    const centerX = cellStart + cellSize / 2;
+                    if (centerX < totalWidth) {
+                      items.push(
+                        <span
+                          key={`t-${i}`}
+                          className="text-gray-500 absolute pointer-events-none text-[9px] font-medium whitespace-nowrap"
+                          style={{
+                            left: centerX,
+                            top: "50%",
+                            transform: "translate(-50%, -50%)",
+                          }}
+                        >
+                          {t("cutVertical")}
+                        </span>,
+                      );
+                    }
+                  }
+                }
+                return items;
+              })()}
               {gutterPos?.type === "top" && (
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-green-500 pointer-events-none"
@@ -424,18 +510,71 @@ export function CutCanvas() {
               onMouseLeave={handleGutterMouseLeave}
               title={t("clickToAddHorizontalLine")}
             >
-              {/* ハサミアイコンを100px間隔で配置 */}
-              {Array.from(
-                { length: Math.floor((activeImage.height * scale) / 100) },
-                (_, i) => (
-                  <Scissors
-                    key={i}
-                    size={10}
-                    className="text-gray-500 absolute pointer-events-none"
-                    style={{ top: (i + 1) * 100 - 5 }}
-                  />
-                ),
-              )}
+              {/* 100pxごとに区切り、ハサミ2つまたはテキストを交互配置 */}
+              {(() => {
+                const items: React.ReactNode[] = [];
+                const totalHeight = activeImage.height * scale;
+                const cellSize = 100;
+                const count = Math.ceil(totalHeight / cellSize);
+
+                for (let i = 0; i < count; i++) {
+                  const cellStart = i * cellSize;
+                  if (cellStart > totalHeight) break;
+
+                  if (i % 2 === 0) {
+                    // ハサミ2つ: 空白・ハサミ・空白(中央)・ハサミ・空白
+                    const pos1 = cellStart + cellSize * 0.25;
+                    const pos2 = cellStart + cellSize * 0.75;
+                    if (pos1 < totalHeight) {
+                      items.push(
+                        <Scissors
+                          key={`s1-${i}`}
+                          size={10}
+                          className="text-gray-500 absolute pointer-events-none"
+                          style={{
+                            top: pos1,
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                          }}
+                        />,
+                      );
+                    }
+                    if (pos2 < totalHeight) {
+                      items.push(
+                        <Scissors
+                          key={`s2-${i}`}
+                          size={10}
+                          className="text-gray-500 absolute pointer-events-none"
+                          style={{
+                            top: pos2,
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                          }}
+                        />,
+                      );
+                    }
+                  } else {
+                    // テキスト（中央、縦書き風）
+                    const centerY = cellStart + cellSize / 2;
+                    if (centerY < totalHeight) {
+                      items.push(
+                        <span
+                          key={`t-${i}`}
+                          className="text-gray-500 absolute pointer-events-none text-[9px] font-medium whitespace-nowrap"
+                          style={{
+                            top: centerY,
+                            left: "50%",
+                            transform: "translate(-50%, -50%) rotate(-90deg)",
+                          }}
+                        >
+                          {t("cutHorizontal")}
+                        </span>,
+                      );
+                    }
+                  }
+                }
+                return items;
+              })()}
               {gutterPos?.type === "left" && (
                 <div
                   className="absolute left-0 right-0 h-0.5 bg-blue-500 pointer-events-none"

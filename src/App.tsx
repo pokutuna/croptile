@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { GripVertical } from "lucide-react";
 import { Toolbar } from "./components/Toolbar";
 import { CutArea } from "./components/CutArea";
 import { LayoutArea } from "./components/LayoutArea";
@@ -55,11 +56,19 @@ function App() {
       >
         <CutArea widthPercent={splitRatio * 100} />
         <div
-          className={`w-1 bg-gray-300 hover:bg-blue-400 cursor-col-resize transition-colors shrink-0 ${
+          className={`w-2 bg-gray-300 hover:bg-blue-400 cursor-col-resize transition-colors shrink-0 flex items-center justify-center relative ${
             isDragging ? "bg-blue-500" : ""
           }`}
           onMouseDown={handleMouseDown}
-        />
+        >
+          <div
+            className={`absolute bg-gray-400 hover:bg-blue-500 rounded py-2 px-0.5 shadow-sm transition-colors ${
+              isDragging ? "bg-blue-600" : ""
+            }`}
+          >
+            <GripVertical size={12} className="text-white" />
+          </div>
+        </div>
         <LayoutArea widthPercent={(1 - splitRatio) * 100} />
       </main>
     </div>

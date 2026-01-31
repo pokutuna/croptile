@@ -41,6 +41,10 @@ interface AppState {
   paintColor: string;
   paintWidth: number;
 
+  // チュートリアル完了フラグ
+  hasCompletedTutorial: boolean;
+  hasCleared: boolean;
+
   // アクション - 画像
   addImage: (image: ScoreImage) => void;
   removeImage: (imageId: string) => void;
@@ -83,6 +87,10 @@ interface AppState {
 
   // セル再計算
   recalculateCells: () => void;
+
+  // チュートリアル完了
+  setHasCompletedTutorial: (value: boolean) => void;
+  setHasCleared: (value: boolean) => void;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -103,6 +111,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   paintMode: false,
   paintColor: "#ffffff",
   paintWidth: 10,
+  hasCompletedTutorial: false,
+  hasCleared: false,
 
   addImage: (image) => {
     set((state) => ({
@@ -224,14 +234,34 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const image = state.images.find((img) => img.id === cell.imageId);
     if (!image) return;
 
-    // 新しい配置位置を計算（既存セルの下に隙間なく配置）
+    // 新しい配置位置を計算
     let x = 0;
     let y = 0;
     if (state.placedCells.length > 0) {
-      // 最後に配置したセルの下に配置
-      const lastPlaced = state.placedCells[state.placedCells.length - 1];
-      x = lastPlaced.x;
-      y = lastPlaced.y + lastPlaced.rect.height;
+      // 現在のレイアウトのバウンディングボックスを計算
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const pc of state.placedCells) {
+        minX = Math.min(minX, pc.x);
+        minY = Math.min(minY, pc.y);
+        maxX = Math.max(maxX, pc.x + pc.rect.width);
+        maxY = Math.max(maxY, pc.y + pc.rect.height);
+      }
+      const layoutWidth = maxX - minX;
+      const layoutHeight = maxY - minY;
+
+      // 縦長なら右に、横長なら下に追加
+      if (layoutHeight > layoutWidth) {
+        // 縦長 → 右に追加
+        x = maxX;
+        y = minY;
+      } else {
+        // 横長または正方形 → 下に追加
+        x = minX;
+        y = maxY;
+      }
     }
 
     set((state) => ({
@@ -272,7 +302,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   clearLayout: () => {
-    set({ placedCells: [], selectedPlacedCellId: null, paintStrokes: [] });
+    set({
+      placedCells: [],
+      selectedPlacedCellId: null,
+      paintStrokes: [],
+      hasCleared: true,
+    });
   },
 
   setPaintMode: (value) => {
@@ -401,5 +436,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
       cells: newCells,
       nextCellNumberByImage: newNextCellNumberByImage,
     });
+  },
+
+  setHasCompletedTutorial: (value) => {
+    set({ hasCompletedTutorial: value });
+  },
+
+  setHasCleared: (value) => {
+    set({ hasCleared: value });
   },
 }));

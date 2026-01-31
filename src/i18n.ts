@@ -1,10 +1,11 @@
 const messages = {
   en: {
     // Toolbar
-    export: "Export",
+    download: "Download",
+    saveAs: "Save As...",
 
     // CutArea
-    cut: "Cut",
+    cut: "Crop",
     cutVertical: "Cut Vertical",
     cutHorizontal: "Cut Horizontal",
     reset: "Reset",
@@ -20,6 +21,8 @@ const messages = {
     zoomOut: "Zoom Out",
     resetZoom: "Reset to 100%",
     fitToView: "Fit to View",
+    fitToWidth: "Fit to Width",
+    fitToHeight: "Fit to Height",
     clickToAddHorizontalLine: "Click to add horizontal cut line",
     clickToAddVerticalLine: "Click to add vertical cut line",
 
@@ -44,12 +47,24 @@ const messages = {
     // LayoutCanvas
     fillBackground: "Fill background",
     clickToAddToLayout: "Click labels on the left image to add",
+
+    // Tutorial
+    tutorialStep1: "Upload an image to the Cut panel on the left",
+    tutorialStep2: "Draw lines to split the image into sections",
+    tutorialStep3Pre: "Hover over a tile and click",
+    tutorialStep3Post: "to place it here",
+    tutorialStep4: "Arrange the sections by dragging",
+    tutorialStep4Sub: "Use the pen tool to erase or draw",
+    tutorialStep5: "Download your result",
+    tutorialStep6Pre: "Click",
+    tutorialStep6Post: "to start a new layout",
     clickToAddVerticalGuide: "Click to add/remove vertical guide",
     clickToAddHorizontalGuide: "Click to add/remove horizontal guide",
     removeGuide: "Remove guide",
     customColor: "Custom color",
     clickToDelete: "Click to delete",
     clickToAddCell: "Click to add to layout",
+    addCell: "+Add",
 
     // Background presets
     white: "White",
@@ -61,7 +76,8 @@ const messages = {
   },
   ja: {
     // Toolbar
-    export: "エクスポート",
+    download: "ダウンロード",
+    saveAs: "名前を付けて保存...",
 
     // CutArea
     cut: "カット",
@@ -80,6 +96,8 @@ const messages = {
     zoomOut: "縮小",
     resetZoom: "100%にリセット",
     fitToView: "全体を表示",
+    fitToWidth: "横幅に合わせる",
+    fitToHeight: "高さに合わせる",
     clickToAddHorizontalLine: "クリックで横カット線を追加",
     clickToAddVerticalLine: "クリックで縦カット線を追加",
 
@@ -104,12 +122,24 @@ const messages = {
     // LayoutCanvas
     fillBackground: "背景を塗りつぶす",
     clickToAddToLayout: "左の画像上のラベルをクリックして追加",
+
+    // Tutorial
+    tutorialStep1: "左のカットパネルに画像をアップロード",
+    tutorialStep2: "分割線を引いてセクションに分ける",
+    tutorialStep3Pre: "タイルにホバーして",
+    tutorialStep3Post: "をクリック",
+    tutorialStep4: "ドラッグして配置を調整",
+    tutorialStep4Sub: "ペンツールで消したり書き込んだりできます",
+    tutorialStep5: "ダウンロードして保存",
+    tutorialStep6Pre: "",
+    tutorialStep6Post: "で新たなタイルを配置",
     clickToAddVerticalGuide: "クリックで縦ガイド線を追加/削除",
     clickToAddHorizontalGuide: "クリックで横ガイド線を追加/削除",
     removeGuide: "ガイドを削除",
     customColor: "カスタム色",
     clickToDelete: "クリックで削除",
     clickToAddCell: "クリックでレイアウトに追加",
+    addCell: "+追加",
 
     // Background presets
     white: "白",
