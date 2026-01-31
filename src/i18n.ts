@@ -6,8 +6,8 @@ const messages = {
 
     // CutArea
     cut: "Crop",
-    cutVertical: "Cut Vertical",
-    cutHorizontal: "Cut Horizontal",
+    cutVertical: "Split Vertically",
+    cutHorizontal: "Split Horizontally",
     reset: "Reset",
     page: "Page",
     addImage: "Add Image",
@@ -49,7 +49,7 @@ const messages = {
     clickToAddToLayout: "Click labels on the left image to add",
 
     // Tutorial
-    tutorialStep1: "Upload an image to the Cut panel on the left",
+    tutorialStep1: "Load an image to the Crop panel on the left",
     tutorialStep2: "Draw lines to split the image into sections",
     tutorialStep3Pre: "Hover over a tile and click",
     tutorialStep3Post: "to place it here",
@@ -124,7 +124,7 @@ const messages = {
     clickToAddToLayout: "左の画像上のラベルをクリックして追加",
 
     // Tutorial
-    tutorialStep1: "左のカットパネルに画像をアップロード",
+    tutorialStep1: "左のカットパネルに画像を読み込む",
     tutorialStep2: "分割線を引いてセクションに分ける",
     tutorialStep3Pre: "タイルにホバーして",
     tutorialStep3Post: "をクリック",

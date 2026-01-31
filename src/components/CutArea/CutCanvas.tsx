@@ -1,32 +1,22 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Scissors,
-  Maximize,
-  MoveHorizontal,
-  MoveVertical,
-} from "lucide-react";
+import { Scissors } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { findCellBoundsAtPoint } from "../../utils/geometry";
 import type { DraggingLine } from "../../types";
 import { LineOverlay } from "./LineOverlay";
 import { CellOverlay } from "./CellOverlay";
 import { ImageUploader } from "../ImageUploader";
+import { ZoomControls } from "../LayoutArea/ZoomControls";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
+import { useZoom } from "../../hooks/useZoom";
 
-const MIN_SCALE = 0.25;
-const MAX_SCALE = 3;
-const SCALE_STEP = 0.25;
 const GUTTER_SIZE = 16; // 左端・上端のカット領域の幅
 
 export function CutCanvas() {
   useLocale(); // Re-render on locale change
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
     null,
   );
@@ -35,6 +25,18 @@ export function CutCanvas() {
     position: number;
   } | null>(null);
   const [draggingLine, setDraggingLine] = useState<DraggingLine | null>(null);
+
+  const {
+    scale,
+    handleZoomIn,
+    handleZoomOut,
+    handleResetZoom,
+    handleFitToView: zoomFitToView,
+    handleFitToWidth: zoomFitToWidth,
+    handleFitToHeight: zoomFitToHeight,
+    canZoomIn,
+    canZoomOut,
+  } = useZoom({ gutterSize: GUTTER_SIZE, padding: 20 });
 
   const activeImageId = useAppStore((state) => state.activeImageId);
   const images = useAppStore((state) => state.images);
@@ -105,45 +107,24 @@ export function CutCanvas() {
     img.src = activeImage.dataUrl;
   }, [activeImage, scale]);
 
-  // 拡大縮小
-  const handleZoomIn = useCallback(() => {
-    setScale((s) => Math.min(MAX_SCALE, s + SCALE_STEP));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setScale((s) => Math.max(MIN_SCALE, s - SCALE_STEP));
-  }, []);
-
-  const handleResetZoom = useCallback(() => {
-    setScale(1);
-  }, []);
-
+  // フィット系のハンドラ（activeImage依存のためラップ）
   const handleFitToView = useCallback(() => {
-    if (!activeImage || !containerRef.current) return;
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth - GUTTER_SIZE - 20;
-    const containerHeight = container.clientHeight - GUTTER_SIZE - 20;
-    const scaleX = containerWidth / activeImage.width;
-    const scaleY = containerHeight / activeImage.height;
-    const fitScale = Math.min(scaleX, scaleY, MAX_SCALE);
-    setScale(Math.max(MIN_SCALE, fitScale));
-  }, [activeImage]);
+    if (!activeImage) return;
+    zoomFitToView(
+      { width: activeImage.width, height: activeImage.height },
+      containerRef,
+    );
+  }, [activeImage, zoomFitToView]);
 
   const handleFitToWidth = useCallback(() => {
-    if (!activeImage || !containerRef.current) return;
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth - GUTTER_SIZE - 20;
-    const fitScale = Math.min(containerWidth / activeImage.width, MAX_SCALE);
-    setScale(Math.max(MIN_SCALE, fitScale));
-  }, [activeImage]);
+    if (!activeImage) return;
+    zoomFitToWidth(activeImage.width, containerRef);
+  }, [activeImage, zoomFitToWidth]);
 
   const handleFitToHeight = useCallback(() => {
-    if (!activeImage || !containerRef.current) return;
-    const container = containerRef.current;
-    const containerHeight = container.clientHeight - GUTTER_SIZE - 20;
-    const fitScale = Math.min(containerHeight / activeImage.height, MAX_SCALE);
-    setScale(Math.max(MIN_SCALE, fitScale));
-  }, [activeImage]);
+    if (!activeImage) return;
+    zoomFitToHeight(activeImage.height, containerRef);
+  }, [activeImage, zoomFitToHeight]);
 
   // マウス位置を更新
   const handleMouseMove = useCallback(
@@ -343,53 +324,18 @@ export function CutCanvas() {
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* ズームコントロール */}
       <div className="shrink-0 bg-gray-200 px-4 py-2 flex items-center gap-2 border-b border-gray-300">
-        <button
-          onClick={handleZoomOut}
-          disabled={scale <= MIN_SCALE}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("zoomOut")}
-        >
-          <ZoomOut size={18} />
-        </button>
-        <span className="text-sm font-medium w-16 text-center">
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          onClick={handleZoomIn}
-          disabled={scale >= MAX_SCALE}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("zoomIn")}
-        >
-          <ZoomIn size={18} />
-        </button>
-        <button
-          onClick={handleResetZoom}
-          className="p-1 rounded hover:bg-gray-300 ml-2"
-          title={t("resetZoom")}
-        >
-          <RotateCcw size={18} />
-        </button>
-        <button
-          onClick={handleFitToView}
-          className="p-1 rounded hover:bg-gray-300"
-          title={t("fitToView")}
-        >
-          <Maximize size={18} />
-        </button>
-        <button
-          onClick={handleFitToWidth}
-          className="p-1 rounded hover:bg-gray-300"
-          title={t("fitToWidth")}
-        >
-          <MoveHorizontal size={18} />
-        </button>
-        <button
-          onClick={handleFitToHeight}
-          className="p-1 rounded hover:bg-gray-300"
-          title={t("fitToHeight")}
-        >
-          <MoveVertical size={18} />
-        </button>
+        <ZoomControls
+          scale={scale}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          canFit={true}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetZoom={handleResetZoom}
+          onFitToView={handleFitToView}
+          onFitToWidth={handleFitToWidth}
+          onFitToHeight={handleFitToHeight}
+        />
       </div>
 
       {/* キャンバス領域 */}

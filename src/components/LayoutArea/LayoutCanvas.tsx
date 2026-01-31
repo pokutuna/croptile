@@ -1,67 +1,43 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRef } from "react";
-import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Maximize,
-  MoveHorizontal,
-  MoveVertical,
-  Check,
-  Trash2,
-} from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
-import type { Cell } from "../../types";
+import type { Cell, DragState, PaintingState, GuideLine } from "../../types";
 import { PlacedCellView } from "./PlacedCellView";
+import { ZoomControls } from "./ZoomControls";
+import { BackgroundControls } from "./BackgroundControls";
+import { TutorialPanel } from "./TutorialPanel";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
+import { useZoom } from "../../hooks/useZoom";
 
-const MIN_SCALE = 0.25;
-const MAX_SCALE = 3;
-const SCALE_STEP = 0.25;
 const GUTTER_SIZE = 20;
 
-const BACKGROUND_PRESETS = [
-  { key: "white", color: "#ffffff" },
-  { key: "cream", color: "#fffef0" },
-  { key: "ivory", color: "#fffff0" },
-  { key: "sepiaLight", color: "#faf0e6" },
-  { key: "sepia", color: "#f5e6d3" },
-  { key: "sepiaDark", color: "#e8dcc8" },
-] as const;
-
-interface DragState {
-  placedCellId: string;
-  startX: number;
-  startY: number;
-  offsetX: number;
-  offsetY: number;
-}
-
-interface PaintingState {
-  placedCellId: string;
-  points: { x: number; y: number }[];
-}
-
 export function LayoutCanvas() {
-  useLocale(); // Re-render on locale change
+  useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [paintingState, setPaintingState] = useState<PaintingState | null>(
     null,
   );
-  const [snapLines, setSnapLines] = useState<
-    { type: "horizontal" | "vertical"; position: number }[]
-  >([]);
-  const [userGuides, setUserGuides] = useState<
-    { type: "horizontal" | "vertical"; position: number }[]
-  >([]);
+  const [snapLines, setSnapLines] = useState<GuideLine[]>([]);
+  const [userGuides, setUserGuides] = useState<GuideLine[]>([]);
   const [gutterHover, setGutterHover] = useState<{
     type: "left" | "top";
     position: number;
   } | null>(null);
+
+  const {
+    scale,
+    handleZoomIn,
+    handleZoomOut,
+    handleResetZoom,
+    handleFitToView: zoomFitToView,
+    handleFitToWidth: zoomFitToWidth,
+    handleFitToHeight: zoomFitToHeight,
+    canZoomIn,
+    canZoomOut,
+  } = useZoom({ gutterSize: GUTTER_SIZE, padding: 40 });
 
   const images = useAppStore((state) => state.images);
   const cells = useAppStore((state) => state.cells);
@@ -91,20 +67,7 @@ export function LayoutCanvas() {
     (state) => state.setSelectedPlacedCell,
   );
 
-  // 拡大縮小
-  const handleZoomIn = useCallback(() => {
-    setScale((s) => Math.min(MAX_SCALE, s + SCALE_STEP));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setScale((s) => Math.max(MIN_SCALE, s - SCALE_STEP));
-  }, []);
-
-  const handleResetZoom = useCallback(() => {
-    setScale(1);
-  }, []);
-
-  // 配置されたセルの情報（PlacedCellに全情報が含まれている）
+  // 配置されたセルの情報
   const placedCellsWithInfo = useMemo(() => {
     return placedCells.map((pc) => ({
       ...pc,
@@ -142,32 +105,18 @@ export function LayoutCanvas() {
     };
   }, [placedCellsWithInfo]);
 
+  // フィット系のハンドラ（boundingBox依存のためラップ）
   const handleFitToView = useCallback(() => {
-    if (!boundingBox || !containerRef.current) return;
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth - GUTTER_SIZE - 40;
-    const containerHeight = container.clientHeight - GUTTER_SIZE - 40;
-    const scaleX = containerWidth / boundingBox.width;
-    const scaleY = containerHeight / boundingBox.height;
-    const fitScale = Math.min(scaleX, scaleY, MAX_SCALE);
-    setScale(Math.max(MIN_SCALE, fitScale));
-  }, [boundingBox]);
+    zoomFitToView(boundingBox, containerRef);
+  }, [boundingBox, zoomFitToView]);
 
   const handleFitToWidth = useCallback(() => {
-    if (!boundingBox || !containerRef.current) return;
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth - GUTTER_SIZE - 40;
-    const fitScale = Math.min(containerWidth / boundingBox.width, MAX_SCALE);
-    setScale(Math.max(MIN_SCALE, fitScale));
-  }, [boundingBox]);
+    zoomFitToWidth(boundingBox?.width ?? null, containerRef);
+  }, [boundingBox, zoomFitToWidth]);
 
   const handleFitToHeight = useCallback(() => {
-    if (!boundingBox || !containerRef.current) return;
-    const container = containerRef.current;
-    const containerHeight = container.clientHeight - GUTTER_SIZE - 40;
-    const fitScale = Math.min(containerHeight / boundingBox.height, MAX_SCALE);
-    setScale(Math.max(MIN_SCALE, fitScale));
-  }, [boundingBox]);
+    zoomFitToHeight(boundingBox?.height ?? null, containerRef);
+  }, [boundingBox, zoomFitToHeight]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, placedCellId: string) => {
@@ -201,7 +150,6 @@ export function LayoutCanvas() {
       );
       if (!draggingPlaced) return;
 
-      // 他のセルの矩形を取得
       const otherRects = placedCellsWithInfo
         .filter((p) => p.id !== dragState.placedCellId)
         .map((p) => ({
@@ -218,7 +166,6 @@ export function LayoutCanvas() {
         height: draggingPlaced.cell.rect.height,
       };
 
-      // Alt/Option キーでスナップ無効
       if (e.altKey) {
         setSnapLines([]);
         updatePlacedCellPosition(dragState.placedCellId, newX, newY);
@@ -246,7 +193,7 @@ export function LayoutCanvas() {
     }
   }, [setSelectedPlacedCell, paintMode]);
 
-  // 左ガター（横ガイド線）
+  // ガター操作
   const handleLeftGutterMouseMove = useCallback(
     (e: React.MouseEvent) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -260,7 +207,6 @@ export function LayoutCanvas() {
     (e: React.MouseEvent) => {
       const rect = e.currentTarget.getBoundingClientRect();
       const y = Math.round((e.clientY - rect.top) / scale);
-      // ±5px以内にガイドがあれば削除、なければ追加
       setUserGuides((prev) => {
         const existing = prev.find(
           (g) => g.type === "horizontal" && Math.abs(g.position - y) <= 5,
@@ -268,13 +214,12 @@ export function LayoutCanvas() {
         if (existing) {
           return prev.filter((g) => g !== existing);
         }
-        return [...prev, { type: "horizontal", position: y }];
+        return [...prev, { type: "horizontal" as const, position: y }];
       });
     },
     [scale],
   );
 
-  // 上ガター（縦ガイド線）
   const handleTopGutterMouseMove = useCallback(
     (e: React.MouseEvent) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -288,7 +233,6 @@ export function LayoutCanvas() {
     (e: React.MouseEvent) => {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = Math.round((e.clientX - rect.left) / scale);
-      // ±5px以内にガイドがあれば削除、なければ追加
       setUserGuides((prev) => {
         const existing = prev.find(
           (g) => g.type === "vertical" && Math.abs(g.position - x) <= 5,
@@ -296,7 +240,7 @@ export function LayoutCanvas() {
         if (existing) {
           return prev.filter((g) => g !== existing);
         }
-        return [...prev, { type: "vertical", position: x }];
+        return [...prev, { type: "vertical" as const, position: x }];
       });
     },
     [scale],
@@ -306,7 +250,6 @@ export function LayoutCanvas() {
     setGutterHover(null);
   }, []);
 
-  // ホバー位置が既存ガイドの削除範囲内かどうか
   const gutterHoverIsDelete = useMemo(() => {
     if (!gutterHover) return false;
     if (gutterHover.type === "left") {
@@ -324,7 +267,7 @@ export function LayoutCanvas() {
     }
   }, [gutterHover, userGuides]);
 
-  // セル上でのペン描画開始
+  // ペン操作
   const handleCellPaintStart = useCallback(
     (
       e: React.MouseEvent,
@@ -333,26 +276,21 @@ export function LayoutCanvas() {
       cellY: number,
     ) => {
       if (!paintMode) return;
-
       e.stopPropagation();
-      // PlacedCellView から渡されたセル内座標を使用
       setPaintingState({ placedCellId, points: [{ x: cellX, y: cellY }] });
     },
     [paintMode],
   );
 
-  // ペン描画中のマウス移動（コンテナ全体で追跡）
   const handlePaintMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (!paintingState) return;
 
-      // 描画中のセルを見つける
       const placed = placedCellsWithInfo.find(
         (p) => p.id === paintingState.placedCellId,
       );
       if (!placed) return;
 
-      // コンテナの座標からセル内の相対座標を計算
       const containerRect = e.currentTarget.getBoundingClientRect();
       const containerX = (e.clientX - containerRect.left) / scale;
       const containerY = (e.clientY - containerRect.top) / scale;
@@ -385,7 +323,6 @@ export function LayoutCanvas() {
   // キーボード操作
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Z / Cmd+Z でペンストロークを1つ戻す
       if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         undoLastPaintStroke();
@@ -454,93 +391,24 @@ export function LayoutCanvas() {
     <div className="flex flex-col h-full">
       {/* ズームコントロール */}
       <div className="shrink-0 bg-gray-200 px-4 py-2 flex items-center gap-2 border-b border-gray-300">
-        <button
-          onClick={handleZoomOut}
-          disabled={scale <= MIN_SCALE}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("zoomOut")}
-        >
-          <ZoomOut size={18} />
-        </button>
-        <span className="text-sm font-medium w-16 text-center">
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          onClick={handleZoomIn}
-          disabled={scale >= MAX_SCALE}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("zoomIn")}
-        >
-          <ZoomIn size={18} />
-        </button>
-        <button
-          onClick={handleResetZoom}
-          className="p-1 rounded hover:bg-gray-300 ml-2"
-          title={t("resetZoom")}
-        >
-          <RotateCcw size={18} />
-        </button>
-        <button
-          onClick={handleFitToView}
-          disabled={!boundingBox}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("fitToView")}
-        >
-          <Maximize size={18} />
-        </button>
-        <button
-          onClick={handleFitToWidth}
-          disabled={!boundingBox}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("fitToWidth")}
-        >
-          <MoveHorizontal size={18} />
-        </button>
-        <button
-          onClick={handleFitToHeight}
-          disabled={!boundingBox}
-          className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={t("fitToHeight")}
-        >
-          <MoveVertical size={18} />
-        </button>
-
-        {/* 背景を塗りつぶす */}
-        <div className="flex items-center gap-2 ml-auto">
-          <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={useBackground}
-              onChange={(e) => setUseBackground(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300"
-            />
-            {t("fillBackground")}
-          </label>
-          {useBackground && (
-            <div className="flex items-center gap-1">
-              {BACKGROUND_PRESETS.map((preset) => (
-                <button
-                  key={preset.color}
-                  onClick={() => setBackgroundColor(preset.color)}
-                  className={`w-5 h-5 rounded border-2 transition-colors ${
-                    backgroundColor === preset.color
-                      ? "border-blue-500"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  style={{ backgroundColor: preset.color }}
-                  title={t(preset.key)}
-                />
-              ))}
-              <input
-                type="color"
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-                className="w-5 h-5 rounded border border-gray-300 cursor-pointer"
-                title={t("customColor")}
-              />
-            </div>
-          )}
-        </div>
+        <ZoomControls
+          scale={scale}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          canFit={!!boundingBox}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetZoom={handleResetZoom}
+          onFitToView={handleFitToView}
+          onFitToWidth={handleFitToWidth}
+          onFitToHeight={handleFitToHeight}
+        />
+        <BackgroundControls
+          useBackground={useBackground}
+          backgroundColor={backgroundColor}
+          onUseBackgroundChange={setUseBackground}
+          onBackgroundColorChange={setBackgroundColor}
+        />
       </div>
 
       <div
@@ -548,7 +416,7 @@ export function LayoutCanvas() {
         className="flex-1 overflow-auto bg-gray-100 relative"
       >
         <div className="inline-flex flex-col min-w-full min-h-full">
-          {/* 上ガター（縦ガイド線用） */}
+          {/* 上ガター */}
           <div className="flex sticky top-0 z-10">
             <div
               style={{ width: GUTTER_SIZE, height: GUTTER_SIZE }}
@@ -562,7 +430,6 @@ export function LayoutCanvas() {
               onClick={handleTopGutterClick}
               title={t("clickToAddVerticalGuide")}
             >
-              {/* 10px間隔のメモリ */}
               {Array.from({ length: 201 }, (_, i) => i * 10).map((pos) => (
                 <div
                   key={pos}
@@ -598,7 +465,7 @@ export function LayoutCanvas() {
           </div>
 
           <div className="flex flex-1">
-            {/* 左ガター（横ガイド線用） */}
+            {/* 左ガター */}
             <div
               className="bg-gray-200 cursor-crosshair hover:bg-gray-300 transition-colors relative shrink-0 sticky left-0 z-10 overflow-hidden"
               style={{ width: GUTTER_SIZE, minHeight: 1000 }}
@@ -607,7 +474,6 @@ export function LayoutCanvas() {
               onClick={handleLeftGutterClick}
               title={t("clickToAddHorizontalGuide")}
             >
-              {/* 10px間隔のメモリ */}
               {Array.from({ length: 201 }, (_, i) => i * 10).map((pos) => (
                 <div
                   key={pos}
@@ -628,7 +494,7 @@ export function LayoutCanvas() {
               )}
             </div>
 
-            {/* メインキャンバス領域 */}
+            {/* メインキャンバス */}
             <div
               className="relative flex-1"
               style={{
@@ -647,7 +513,6 @@ export function LayoutCanvas() {
               onMouseLeave={paintingState ? handlePaintMouseUp : handleMouseUp}
               onClick={handleContainerClick}
             >
-              {/* ガターホバー時のpx表示（メイン領域内に配置） */}
               {gutterHover?.type === "left" && (
                 <div
                   className={`absolute text-xs px-1 rounded pointer-events-none whitespace-nowrap z-50 ${gutterHoverIsDelete ? "text-red-700 bg-red-100" : "text-purple-700 bg-purple-100"}`}
@@ -661,9 +526,9 @@ export function LayoutCanvas() {
                     : `${Math.round(gutterHover.position)}px`}
                 </div>
               )}
+
               {placedCellsWithInfo.length > 0 && (
                 <>
-                  {/* 背景色（オプション） */}
                   {useBackground && boundingBox && (
                     <div
                       className="absolute"
@@ -677,7 +542,6 @@ export function LayoutCanvas() {
                     />
                   )}
 
-                  {/* 配置されたセル */}
                   {placedCellsWithInfo.map((placed) => (
                     <PlacedCellView
                       key={placed.id}
@@ -701,7 +565,6 @@ export function LayoutCanvas() {
                     />
                   ))}
 
-                  {/* スナップガイドライン（ドラッグ中） */}
                   {snapLines.map((line, i) => (
                     <div
                       key={`snap-${i}`}
@@ -726,7 +589,6 @@ export function LayoutCanvas() {
                 </>
               )}
 
-              {/* ユーザーガイドライン（常に表示） */}
               {userGuides.map((guide, i) => (
                 <div
                   key={`guide-${i}`}
@@ -771,102 +633,13 @@ export function LayoutCanvas() {
           </div>
         </div>
 
-        {/* チュートリアル（配置セルがない時のみ表示） */}
         {placedCellsWithInfo.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-gray-600 text-sm space-y-3 bg-white/95 rounded-lg p-5 shadow-md pointer-events-auto whitespace-nowrap">
-              <div className="flex items-start gap-2">
-                {hasCompletedTutorial || images.length > 0 ? (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
-                    <Check size={12} />
-                  </span>
-                ) : (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
-                    1
-                  </span>
-                )}
-                <span>{t("tutorialStep1")}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                {hasCompletedTutorial || cells.length > 1 ? (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
-                    <Check size={12} />
-                  </span>
-                ) : (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
-                    2
-                  </span>
-                )}
-                <span>{t("tutorialStep2")}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                {hasCompletedTutorial || hasCleared ? (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
-                    <Check size={12} />
-                  </span>
-                ) : (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
-                    3
-                  </span>
-                )}
-                <span>
-                  {t("tutorialStep3Pre")}{" "}
-                  <span className="inline-block px-1.5 py-0.5 bg-green-500 text-white text-xs font-bold rounded">
-                    {t("addCell")}
-                  </span>{" "}
-                  {t("tutorialStep3Post")}
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                {hasCompletedTutorial || hasCleared ? (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
-                    <Check size={12} />
-                  </span>
-                ) : (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
-                    4
-                  </span>
-                )}
-                <div>
-                  <div>{t("tutorialStep4")}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    {t("tutorialStep4Sub")}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                {hasCompletedTutorial ? (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
-                    <Check size={12} />
-                  </span>
-                ) : (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
-                    5
-                  </span>
-                )}
-                <span>{t("tutorialStep5")}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                {hasCompletedTutorial || hasCleared ? (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
-                    <Check size={12} />
-                  </span>
-                ) : (
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-xs flex items-center justify-center font-medium">
-                    6
-                  </span>
-                )}
-                <span>
-                  {t("tutorialStep6Pre")}
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded mx-1">
-                    <Trash2 size={10} />
-                    {t("clear")}
-                  </span>
-                  {t("tutorialStep6Post")}
-                </span>
-              </div>
-            </div>
-          </div>
+          <TutorialPanel
+            hasImages={images.length > 0}
+            hasCells={cells.length > 1}
+            hasCompletedTutorial={hasCompletedTutorial}
+            hasCleared={hasCleared}
+          />
         )}
       </div>
     </div>

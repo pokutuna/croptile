@@ -65,10 +65,42 @@ export interface PaintStroke {
 }
 
 // カットモードの種類
-export type CutMode = "horizontal" | "vertical" | null;
+export type CropDirection = "horizontal" | "vertical";
+export type CropMode = CropDirection | null;
+// 互換性のため別名をエクスポート
+export type CutMode = CropMode;
 
 // ドラッグ中の線の情報
 export interface DraggingLine {
-  type: "horizontal" | "vertical";
+  type: CropDirection;
   id: string;
+}
+
+// 矩形
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// ドラッグ状態
+export interface DragState {
+  placedCellId: string;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+// ペイント中の状態
+export interface PaintingState {
+  placedCellId: string;
+  points: { x: number; y: number }[];
+}
+
+// ガイドライン
+export interface GuideLine {
+  type: "horizontal" | "vertical";
+  position: number;
 }
