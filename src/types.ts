@@ -12,6 +12,8 @@ export interface HorizontalLine {
   id: string;
   imageId: string;
   y: number;
+  leftBoundX: number;
+  rightBoundX: number;
 }
 
 // 垂直カット線

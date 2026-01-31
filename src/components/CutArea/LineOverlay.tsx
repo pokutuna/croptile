@@ -10,7 +10,12 @@ interface LineOverlayProps {
   imageHeight: number;
   mousePos: { x: number; y: number } | null;
   cutMode: CutMode;
-  verticalPreviewBounds: { topBoundY: number; bottomBoundY: number } | null;
+  previewCellBounds: {
+    leftX: number;
+    topY: number;
+    rightX: number;
+    bottomY: number;
+  } | null;
   gutterPreview: { type: "left" | "top"; position: number } | null;
   onLineMouseDown: (type: "horizontal" | "vertical", id: string) => void;
   onLineDelete: (type: "horizontal" | "vertical", id: string) => void;
@@ -24,7 +29,7 @@ export function LineOverlay({
   imageHeight,
   mousePos,
   cutMode,
-  verticalPreviewBounds,
+  previewCellBounds,
   gutterPreview,
   onLineMouseDown,
   onLineDelete,
@@ -50,23 +55,23 @@ export function LineOverlay({
         }}
       >
         {/* プレビュー線 */}
-        {mousePos && cutMode === "horizontal" && (
+        {mousePos && cutMode === "horizontal" && previewCellBounds && (
           <line
-            x1={0}
+            x1={previewCellBounds.leftX * scale}
             y1={mousePos.y * scale}
-            x2={imageWidth * scale}
+            x2={previewCellBounds.rightX * scale}
             y2={mousePos.y * scale}
             stroke="#3b82f6"
             strokeWidth={2}
             strokeDasharray="5,5"
           />
         )}
-        {mousePos && cutMode === "vertical" && verticalPreviewBounds && (
+        {mousePos && cutMode === "vertical" && previewCellBounds && (
           <line
             x1={mousePos.x * scale}
-            y1={verticalPreviewBounds.topBoundY * scale}
+            y1={previewCellBounds.topY * scale}
             x2={mousePos.x * scale}
-            y2={verticalPreviewBounds.bottomBoundY * scale}
+            y2={previewCellBounds.bottomY * scale}
             stroke="#10b981"
             strokeWidth={2}
             strokeDasharray="5,5"
@@ -102,9 +107,9 @@ export function LineOverlay({
           <g key={line.id}>
             {/* 当たり判定用の透明な太い線 */}
             <line
-              x1={0}
+              x1={line.leftBoundX * scale}
               y1={line.y * scale}
-              x2={imageWidth * scale}
+              x2={line.rightBoundX * scale}
               y2={line.y * scale}
               stroke="transparent"
               strokeWidth={12}
@@ -120,9 +125,9 @@ export function LineOverlay({
             />
             {/* 実際に表示される線 */}
             <line
-              x1={0}
+              x1={line.leftBoundX * scale}
               y1={line.y * scale}
-              x2={imageWidth * scale}
+              x2={line.rightBoundX * scale}
               y2={line.y * scale}
               stroke="#3b82f6"
               strokeWidth={3}
@@ -176,7 +181,7 @@ export function LineOverlay({
             key={`del-h-${line.id}`}
             className="absolute pointer-events-auto bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors shadow-md"
             style={{
-              left: 8,
+              left: line.leftBoundX * scale + 8,
               top: line.y * scale - 10,
             }}
             onClick={(e) => {

@@ -30,6 +30,7 @@ interface AppState {
 
   // セル（分割線から導出）
   cells: Cell[];
+  nextCellNumberByImage: Record<string, number>; // 画像ごとの次のセル番号
 
   // レイアウト
   placedCells: PlacedCell[];
@@ -98,6 +99,7 @@ export const useAppStore = create<AppState>()(
       horizontalLines: [],
       verticalLines: [],
       cells: [],
+      nextCellNumberByImage: {},
       placedCells: [],
       selectedPlacedCellId: null,
       paintStrokes: [],
@@ -202,23 +204,31 @@ export const useAppStore = create<AppState>()(
       },
 
       clearLinesForImage: (imageId) => {
-        set((state) => ({
-          horizontalLines: state.horizontalLines.filter(
-            (l) => l.imageId !== imageId,
-          ),
-          verticalLines: state.verticalLines.filter(
-            (l) => l.imageId !== imageId,
-          ),
-        }));
+        set((state) => {
+          // 該当画像のセルだけ削除
+          const remainingCells = state.cells.filter(
+            (c) => c.imageId !== imageId,
+          );
+          // 該当画像の番号をリセット
+          const newNextCellNumberByImage = { ...state.nextCellNumberByImage };
+          delete newNextCellNumberByImage[imageId];
+
+          return {
+            horizontalLines: state.horizontalLines.filter(
+              (l) => l.imageId !== imageId,
+            ),
+            verticalLines: state.verticalLines.filter(
+              (l) => l.imageId !== imageId,
+            ),
+            cells: remainingCells,
+            nextCellNumberByImage: newNextCellNumberByImage,
+          };
+        });
         get().recalculateCells();
       },
 
       addPlacedCell: (cellId) => {
         const state = get();
-        // 既に配置済みかチェック
-        if (state.placedCells.some((pc) => pc.cellId === cellId)) {
-          return;
-        }
 
         // セルと画像を取得
         const cell = state.cells.find((c) => c.id === cellId);
@@ -317,6 +327,7 @@ export const useAppStore = create<AppState>()(
       recalculateCells: () => {
         const state = get();
         const newCells: Cell[] = [];
+        const newNextCellNumberByImage = { ...state.nextCellNumberByImage };
 
         for (const image of state.images) {
           const imageHLines = state.horizontalLines
@@ -326,12 +337,87 @@ export const useAppStore = create<AppState>()(
             (l) => l.imageId === image.id,
           );
 
-          const cells = calculateCells(image, imageHLines, imageVLines);
-          newCells.push(...cells);
+          const rawCells = calculateCells(image, imageHLines, imageVLines);
+
+          // この画像の既存セル
+          const existingImageCells = state.cells.filter(
+            (c) => c.imageId === image.id,
+          );
+
+          // この画像の次の番号を取得（なければ1から）
+          let nextNumber = newNextCellNumberByImage[image.id] ?? 1;
+
+          // 新しいセルに番号を割り当て
+          // 1. 完全一致するrectがあれば番号を継承
+          // 2. 新しいセルが既存セルに含まれていれば、その番号を継承（分割時）
+          // 3. それ以外は新しい番号
+          const usedLabels = new Set<string>();
+
+          for (const rawCell of rawCells) {
+            const r = rawCell.rect;
+
+            // 完全一致を探す
+            let matchedLabel: string | undefined;
+            for (const existing of existingImageCells) {
+              const e = existing.rect;
+              if (
+                e.x === r.x &&
+                e.y === r.y &&
+                e.width === r.width &&
+                e.height === r.height
+              ) {
+                matchedLabel = existing.label;
+                break;
+              }
+            }
+
+            // 完全一致がなければ、新しいセルを含む既存セルを探す（分割の親）
+            if (!matchedLabel) {
+              for (const existing of existingImageCells) {
+                const e = existing.rect;
+                // 新しいセルが既存セルの中に含まれているか
+                if (
+                  r.x >= e.x &&
+                  r.y >= e.y &&
+                  r.x + r.width <= e.x + e.width &&
+                  r.y + r.height <= e.y + e.height
+                ) {
+                  // まだ使われていないラベルなら継承
+                  if (!usedLabels.has(existing.label)) {
+                    matchedLabel = existing.label;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (matchedLabel) {
+              usedLabels.add(matchedLabel);
+              newCells.push({
+                ...rawCell,
+                id: `${rawCell.imageId}-${matchedLabel}`,
+                label: matchedLabel,
+              });
+            } else {
+              // 新規セル → 新しい番号を割り当て
+              const label = String(nextNumber);
+              usedLabels.add(label);
+              newCells.push({
+                ...rawCell,
+                id: `${rawCell.imageId}-${label}`,
+                label,
+              });
+              nextNumber++;
+            }
+          }
+
+          newNextCellNumberByImage[image.id] = nextNumber;
         }
 
-        // セルのみ更新、placedCellsは維持（無効なセルは表示時にスキップされる）
-        set({ cells: newCells });
+        set({
+          cells: newCells,
+          nextCellNumberByImage: newNextCellNumberByImage,
+        });
       },
     }),
     {
@@ -341,6 +427,8 @@ export const useAppStore = create<AppState>()(
         activeImageId: state.activeImageId,
         horizontalLines: state.horizontalLines,
         verticalLines: state.verticalLines,
+        cells: state.cells,
+        nextCellNumberByImage: state.nextCellNumberByImage,
         placedCells: state.placedCells,
         paintStrokes: state.paintStrokes,
       }),

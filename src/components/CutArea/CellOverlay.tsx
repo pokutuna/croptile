@@ -2,21 +2,22 @@ import type { Cell } from "../../types";
 
 interface CellOverlayProps {
   cells: Cell[];
-  placedCellIds: Set<string>;
+  placedCellRects: Set<string>;
   scale: number;
   onCellClick: (cellId: string) => void;
 }
 
 export function CellOverlay({
   cells,
-  placedCellIds,
+  placedCellRects,
   scale,
   onCellClick,
 }: CellOverlayProps) {
   return (
     <div className="absolute top-0 left-0 pointer-events-none">
       {cells.map((cell) => {
-        const isPlaced = placedCellIds.has(cell.id);
+        const rectKey = `${cell.rect.x},${cell.rect.y},${cell.rect.width},${cell.rect.height}`;
+        const isPlaced = placedCellRects.has(rectKey);
         return (
           <div
             key={cell.id}

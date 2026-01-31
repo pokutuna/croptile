@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Scissors, Maximize } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
-import { findVerticalLineBounds } from "../../utils/geometry";
+import { findCellBoundsAtPoint } from "../../utils/geometry";
 import type { DraggingLine } from "../../types";
 import { LineOverlay } from "./LineOverlay";
 import { CellOverlay } from "./CellOverlay";
@@ -63,8 +63,15 @@ export function CutCanvas() {
     [cells, activeImageId],
   );
 
-  const placedCellIds = useMemo(
-    () => new Set(placedCells.map((pc) => pc.cellId)),
+  // 配置済みセルの判定用（rectベースで比較）
+  const placedCellRects = useMemo(
+    () =>
+      new Set(
+        placedCells.map(
+          (pc) =>
+            `${pc.rect.x},${pc.rect.y},${pc.rect.width},${pc.rect.height}`,
+        ),
+      ),
     [placedCells],
   );
 
@@ -174,7 +181,7 @@ export function CutCanvas() {
     setGutterPos(null);
   }, []);
 
-  // 左端ガター: 横線追加
+  // 左端ガター: 横線追加（端から端まで）
   const handleLeftGutterClick = useCallback(
     (e: React.MouseEvent) => {
       if (!activeImage) return;
@@ -183,6 +190,8 @@ export function CutCanvas() {
       addHorizontalLine({
         imageId: activeImage.id,
         y: Math.max(0, Math.min(activeImage.height, y)),
+        leftBoundX: 0,
+        rightBoundX: activeImage.width,
       });
     },
     [activeImage, scale, addHorizontalLine],
@@ -212,22 +221,29 @@ export function CutCanvas() {
       // 右クリックは無視
       if (e.button !== 0) return;
 
+      // クリック位置のセルを見つけて、その境界内で線を引く
+      const cellBounds = findCellBoundsAtPoint(
+        mousePos.x,
+        mousePos.y,
+        imageHLines,
+        imageVLines,
+        activeImage.width,
+        activeImage.height,
+      );
+
       if (cutDirection === "horizontal") {
         addHorizontalLine({
           imageId: activeImage.id,
           y: mousePos.y,
+          leftBoundX: cellBounds.leftX,
+          rightBoundX: cellBounds.rightX,
         });
       } else {
-        const bounds = findVerticalLineBounds(
-          mousePos.y,
-          imageHLines,
-          activeImage.height,
-        );
         addVerticalLine({
           imageId: activeImage.id,
           x: mousePos.x,
-          topBoundY: bounds.topBoundY,
-          bottomBoundY: bounds.bottomBoundY,
+          topBoundY: cellBounds.topY,
+          bottomBoundY: cellBounds.bottomY,
         });
       }
     },
@@ -239,6 +255,7 @@ export function CutCanvas() {
       addHorizontalLine,
       addVerticalLine,
       imageHLines,
+      imageVLines,
     ],
   );
 
@@ -271,11 +288,18 @@ export function CutCanvas() {
     [addPlacedCell],
   );
 
-  // 縦線プレビューの境界を計算
-  const verticalPreviewBounds = useMemo(() => {
-    if (!activeImage || !mousePos || cutDirection !== "vertical") return null;
-    return findVerticalLineBounds(mousePos.y, imageHLines, activeImage.height);
-  }, [activeImage, mousePos, cutDirection, imageHLines]);
+  // プレビュー用のセル境界を計算
+  const previewCellBounds = useMemo(() => {
+    if (!activeImage || !mousePos) return null;
+    return findCellBoundsAtPoint(
+      mousePos.x,
+      mousePos.y,
+      imageHLines,
+      imageVLines,
+      activeImage.width,
+      activeImage.height,
+    );
+  }, [activeImage, mousePos, imageHLines, imageVLines]);
 
   if (!activeImage) {
     return (
@@ -430,7 +454,7 @@ export function CutCanvas() {
               {/* セルオーバーレイ */}
               <CellOverlay
                 cells={imageCells}
-                placedCellIds={placedCellIds}
+                placedCellRects={placedCellRects}
                 scale={scale}
                 onCellClick={handleCellClick}
               />
@@ -444,7 +468,7 @@ export function CutCanvas() {
                 imageHeight={activeImage.height}
                 mousePos={mousePos}
                 cutMode={cutDirection}
-                verticalPreviewBounds={verticalPreviewBounds}
+                previewCellBounds={previewCellBounds}
                 gutterPreview={gutterPos}
                 onLineMouseDown={handleLineMouseDown}
                 onLineDelete={handleLineDelete}

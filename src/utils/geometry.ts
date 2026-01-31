@@ -1,42 +1,60 @@
 import type { ScoreImage, HorizontalLine, VerticalLine, Cell } from "../types";
 
 // セルを計算する
+// 再帰的アプローチ: 領域を線で分割していく
 export function calculateCells(
   image: ScoreImage,
   hLines: HorizontalLine[],
   vLines: VerticalLine[],
 ): Cell[] {
   const cells: Cell[] = [];
+  let cellNumber = 1;
 
-  // 横線のY座標（ソート済み）+ 画像の上端と下端
-  const yBounds = [0, ...hLines.map((l) => l.y), image.height];
+  // 再帰的に領域を分割
+  function subdivide(
+    leftX: number,
+    topY: number,
+    rightX: number,
+    bottomY: number,
+  ): void {
+    // この領域に適用される横線を探す
+    // 横線の範囲がこの領域のX範囲を完全にカバーする場合に適用
+    const applicableHLines = hLines.filter(
+      (hl) =>
+        hl.leftBoundX <= leftX &&
+        hl.rightBoundX >= rightX &&
+        hl.y > topY &&
+        hl.y < bottomY,
+    );
 
-  // 行ごとにセルを生成
-  for (let rowIndex = 0; rowIndex < yBounds.length - 1; rowIndex++) {
-    const topY = yBounds[rowIndex];
-    const bottomY = yBounds[rowIndex + 1];
-    const rowLabel = String.fromCharCode(65 + rowIndex); // A, B, C...
+    // この領域に適用される縦線を探す
+    // 縦線の範囲がこの領域のY範囲を完全にカバーする場合に適用
+    const applicableVLines = vLines.filter(
+      (vl) =>
+        vl.topBoundY <= topY &&
+        vl.bottomBoundY >= bottomY &&
+        vl.x > leftX &&
+        vl.x < rightX,
+    );
 
-    // この行（帯）に含まれる縦線を取得
-    const bandVLines = vLines
-      .filter((vl) => vl.topBoundY <= topY && vl.bottomBoundY >= bottomY)
-      .sort((a, b) => a.x - b.x);
+    // 両方の線を使ってグリッドを作成
+    const yPositions = [
+      topY,
+      ...applicableHLines.map((l) => l.y).sort((a, b) => a - b),
+      bottomY,
+    ];
+    const xPositions = [
+      leftX,
+      ...applicableVLines.map((l) => l.x).sort((a, b) => a - b),
+      rightX,
+    ];
 
-    // X座標の境界
-    const xBounds = [0, ...bandVLines.map((l) => l.x), image.width];
-
-    // 列ごとにセルを生成
-    for (let colIndex = 0; colIndex < xBounds.length - 1; colIndex++) {
-      const leftX = xBounds[colIndex];
-      const rightX = xBounds[colIndex + 1];
-      const colLabel = String(colIndex + 1); // 1, 2, 3...
-
-      const cellId = `${image.id}-${rowLabel}-${colLabel}`;
-
+    // 分割がない場合はセルとして追加
+    if (yPositions.length === 2 && xPositions.length === 2) {
       cells.push({
-        id: cellId,
+        id: `${image.id}-${cellNumber}`,
         imageId: image.id,
-        label: `${rowLabel}-${colLabel}`,
+        label: String(cellNumber),
         rect: {
           x: leftX,
           y: topY,
@@ -44,37 +62,111 @@ export function calculateCells(
           height: bottomY - topY,
         },
       });
+      cellNumber++;
+      return;
+    }
+
+    // グリッドの各セルを再帰的に処理
+    for (let row = 0; row < yPositions.length - 1; row++) {
+      for (let col = 0; col < xPositions.length - 1; col++) {
+        subdivide(
+          xPositions[col],
+          yPositions[row],
+          xPositions[col + 1],
+          yPositions[row + 1],
+        );
+      }
     }
   }
+
+  // 画像全体から開始
+  subdivide(0, 0, image.width, image.height);
 
   return cells;
 }
 
-// 縦線がどの帯に属するか計算
-export function findVerticalLineBounds(
+// クリック位置を含むセルを見つけて、そのセルの境界を返す
+export function findCellBoundsAtPoint(
+  x: number,
   y: number,
   hLines: HorizontalLine[],
+  vLines: VerticalLine[],
+  imageWidth: number,
   imageHeight: number,
-): { topBoundY: number; bottomBoundY: number } {
-  const sortedYs = [
-    0,
-    ...hLines.map((l) => l.y).sort((a, b) => a - b),
-    imageHeight,
-  ];
+): { leftX: number; topY: number; rightX: number; bottomY: number } {
+  // 再帰的にセルを探す
+  function findBounds(
+    leftX: number,
+    topY: number,
+    rightX: number,
+    bottomY: number,
+  ): { leftX: number; topY: number; rightX: number; bottomY: number } {
+    // この領域に適用される横線
+    const applicableHLines = hLines.filter(
+      (hl) =>
+        hl.leftBoundX <= leftX &&
+        hl.rightBoundX >= rightX &&
+        hl.y > topY &&
+        hl.y < bottomY,
+    );
 
-  for (let i = 0; i < sortedYs.length - 1; i++) {
-    if (y >= sortedYs[i] && y < sortedYs[i + 1]) {
-      return {
-        topBoundY: sortedYs[i],
-        bottomBoundY: sortedYs[i + 1],
-      };
+    // この領域に適用される縦線
+    const applicableVLines = vLines.filter(
+      (vl) =>
+        vl.topBoundY <= topY &&
+        vl.bottomBoundY >= bottomY &&
+        vl.x > leftX &&
+        vl.x < rightX,
+    );
+
+    const yPositions = [
+      topY,
+      ...applicableHLines.map((l) => l.y).sort((a, b) => a - b),
+      bottomY,
+    ];
+    const xPositions = [
+      leftX,
+      ...applicableVLines.map((l) => l.x).sort((a, b) => a - b),
+      rightX,
+    ];
+
+    // 分割がない場合はこの境界を返す
+    if (yPositions.length === 2 && xPositions.length === 2) {
+      return { leftX, topY, rightX, bottomY };
     }
+
+    // クリック位置を含むグリッドセルを見つけて再帰
+    let targetRowIdx = 0;
+    for (let i = 0; i < yPositions.length - 1; i++) {
+      if (y >= yPositions[i] && y < yPositions[i + 1]) {
+        targetRowIdx = i;
+        break;
+      }
+      if (i === yPositions.length - 2) {
+        targetRowIdx = i;
+      }
+    }
+
+    let targetColIdx = 0;
+    for (let i = 0; i < xPositions.length - 1; i++) {
+      if (x >= xPositions[i] && x < xPositions[i + 1]) {
+        targetColIdx = i;
+        break;
+      }
+      if (i === xPositions.length - 2) {
+        targetColIdx = i;
+      }
+    }
+
+    return findBounds(
+      xPositions[targetColIdx],
+      yPositions[targetRowIdx],
+      xPositions[targetColIdx + 1],
+      yPositions[targetRowIdx + 1],
+    );
   }
 
-  return {
-    topBoundY: sortedYs[sortedYs.length - 2],
-    bottomBoundY: sortedYs[sortedYs.length - 1],
-  };
+  return findBounds(0, 0, imageWidth, imageHeight);
 }
 
 // 点が矩形内にあるか判定
