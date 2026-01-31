@@ -533,10 +533,10 @@ export function LayoutCanvas() {
                     <div
                       className="absolute"
                       style={{
-                        left: boundingBox.x * scale,
-                        top: boundingBox.y * scale,
-                        width: boundingBox.width * scale,
-                        height: boundingBox.height * scale,
+                        left: 0,
+                        top: 0,
+                        width: (boundingBox.x + boundingBox.width) * scale,
+                        height: (boundingBox.y + boundingBox.height) * scale,
                         backgroundColor: backgroundColor,
                       }}
                     />

@@ -37,7 +37,7 @@ export async function exportToPng(
 ): Promise<Blob | null> {
   if (placedCells.length === 0) return null;
 
-  // バウンディングボックスを計算
+  // バウンディングボックスを計算（原点から右下まで）
   const rects = placedCells.map((pc) => ({
     x: pc.x,
     y: pc.y,
@@ -47,10 +47,10 @@ export async function exportToPng(
   const boundingBox = getBoundingBox(rects);
   if (!boundingBox) return null;
 
-  // Canvasを作成
+  // Canvasを作成（原点から右下まで）
   const canvas = document.createElement("canvas");
-  canvas.width = boundingBox.width;
-  canvas.height = boundingBox.height;
+  canvas.width = boundingBox.x + boundingBox.width;
+  canvas.height = boundingBox.y + boundingBox.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
@@ -74,8 +74,8 @@ export async function exportToPng(
       pc.rect.y,
       pc.rect.width,
       pc.rect.height,
-      pc.x - boundingBox.x,
-      pc.y - boundingBox.y,
+      pc.x,
+      pc.y,
       pc.rect.width,
       pc.rect.height,
     );
@@ -92,15 +92,9 @@ export async function exportToPng(
     ctx.lineJoin = "round";
 
     ctx.beginPath();
-    ctx.moveTo(
-      pc.x + stroke.points[0].x - boundingBox.x,
-      pc.y + stroke.points[0].y - boundingBox.y,
-    );
+    ctx.moveTo(pc.x + stroke.points[0].x, pc.y + stroke.points[0].y);
     for (let i = 1; i < stroke.points.length; i++) {
-      ctx.lineTo(
-        pc.x + stroke.points[i].x - boundingBox.x,
-        pc.y + stroke.points[i].y - boundingBox.y,
-      );
+      ctx.lineTo(pc.x + stroke.points[i].x, pc.y + stroke.points[i].y);
     }
     ctx.stroke();
   }
