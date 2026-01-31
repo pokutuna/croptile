@@ -10,7 +10,7 @@ import { useAppStore } from "../../store/useAppStore";
 import { loadImage } from "../../utils/image";
 import { CutCanvas } from "./CutCanvas";
 
-const MAX_PAGES = 5;
+const MAX_PAGES = 3;
 
 interface CutAreaProps {
   widthPercent: number;
@@ -92,12 +92,11 @@ export function CutArea({ widthPercent }: CutAreaProps) {
         <h2 className="font-semibold text-gray-700">カット</h2>
 
         {/* ページタブ */}
-        <div className="flex items-center gap-1 flex-1 overflow-x-auto">
+        <div className="flex items-center gap-1 overflow-x-auto">
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
-            multiple
             onChange={handleFileChange}
             className="hidden"
           />
@@ -139,30 +138,34 @@ export function CutArea({ widthPercent }: CutAreaProps) {
           )}
         </div>
 
-        {/* カット方向トグル */}
-        <div className="flex items-center rounded border border-gray-300 overflow-hidden">
-          <button
-            onClick={() => setCutDirection("vertical")}
-            className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
-              cutDirection === "vertical"
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-            title="縦カット"
-          >
-            <FlipHorizontal2 size={16} />縦
-          </button>
-          <button
-            onClick={() => setCutDirection("horizontal")}
-            className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
-              cutDirection === "horizontal"
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-            title="横カット"
-          >
-            <FlipVertical2 size={16} />横
-          </button>
+        {/* 切り取り方向トグル - 中央配置 */}
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center rounded border border-gray-300 overflow-hidden">
+            <button
+              onClick={() => setCutDirection("vertical")}
+              className={`flex items-center gap-1 px-3 py-1 text-sm transition-colors ${
+                cutDirection === "vertical"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              title="縦に切る"
+            >
+              <FlipHorizontal2 size={16} />
+              縦に切る
+            </button>
+            <button
+              onClick={() => setCutDirection("horizontal")}
+              className={`flex items-center gap-1 px-3 py-1 text-sm transition-colors ${
+                cutDirection === "horizontal"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              title="横に切る"
+            >
+              <FlipVertical2 size={16} />
+              横に切る
+            </button>
+          </div>
         </div>
 
         {/* リセットボタン */}
