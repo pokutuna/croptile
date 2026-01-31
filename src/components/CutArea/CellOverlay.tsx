@@ -1,4 +1,5 @@
 import type { Cell } from "../../types";
+import { t } from "../../i18n";
 
 interface CellOverlayProps {
   cells: Cell[];
@@ -46,7 +47,7 @@ export function CellOverlay({
                 e.stopPropagation();
                 onCellClick(cell.id);
               }}
-              title="クリックでレイアウトに追加"
+              title={t("clickToAddCell")}
             >
               {cell.label}
             </button>

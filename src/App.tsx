@@ -2,11 +2,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Toolbar } from "./components/Toolbar";
 import { CutArea } from "./components/CutArea";
 import { LayoutArea } from "./components/LayoutArea";
-import { ImageUploader } from "./components/ImageUploader";
 import { useAppStore } from "./store/useAppStore";
 
 function App() {
-  const images = useAppStore((state) => state.images);
   const recalculateCells = useAppStore((state) => state.recalculateCells);
   const [splitRatio, setSplitRatio] = useState(0.6); // 左パネルの割合（60%）
   const [isDragging, setIsDragging] = useState(false);
@@ -55,24 +53,14 @@ function App() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {images.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="max-w-md w-full">
-              <ImageUploader />
-            </div>
-          </div>
-        ) : (
-          <>
-            <CutArea widthPercent={splitRatio * 100} />
-            <div
-              className={`w-1 bg-gray-300 hover:bg-blue-400 cursor-col-resize transition-colors shrink-0 ${
-                isDragging ? "bg-blue-500" : ""
-              }`}
-              onMouseDown={handleMouseDown}
-            />
-            <LayoutArea widthPercent={(1 - splitRatio) * 100} />
-          </>
-        )}
+        <CutArea widthPercent={splitRatio * 100} />
+        <div
+          className={`w-1 bg-gray-300 hover:bg-blue-400 cursor-col-resize transition-colors shrink-0 ${
+            isDragging ? "bg-blue-500" : ""
+          }`}
+          onMouseDown={handleMouseDown}
+        />
+        <LayoutArea widthPercent={(1 - splitRatio) * 100} />
       </main>
     </div>
   );

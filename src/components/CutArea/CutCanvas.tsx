@@ -5,6 +5,9 @@ import { findCellBoundsAtPoint } from "../../utils/geometry";
 import type { DraggingLine } from "../../types";
 import { LineOverlay } from "./LineOverlay";
 import { CellOverlay } from "./CellOverlay";
+import { ImageUploader } from "../ImageUploader";
+import { t } from "../../i18n";
+import { useLocale } from "../../hooks/useLocale";
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 3;
@@ -12,6 +15,7 @@ const SCALE_STEP = 0.25;
 const GUTTER_SIZE = 16; // 左端・上端のカット領域の幅
 
 export function CutCanvas() {
+  useLocale(); // Re-render on locale change
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -303,8 +307,10 @@ export function CutCanvas() {
 
   if (!activeImage) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-400">
-        画像を追加してください
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="max-w-md w-full">
+          <ImageUploader />
+        </div>
       </div>
     );
   }
@@ -317,7 +323,7 @@ export function CutCanvas() {
           onClick={handleZoomOut}
           disabled={scale <= MIN_SCALE}
           className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="縮小"
+          title={t("zoomOut")}
         >
           <ZoomOut size={18} />
         </button>
@@ -328,21 +334,21 @@ export function CutCanvas() {
           onClick={handleZoomIn}
           disabled={scale >= MAX_SCALE}
           className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="拡大"
+          title={t("zoomIn")}
         >
           <ZoomIn size={18} />
         </button>
         <button
           onClick={handleResetZoom}
           className="p-1 rounded hover:bg-gray-300 ml-2"
-          title="100%にリセット"
+          title={t("resetZoom")}
         >
           <RotateCcw size={18} />
         </button>
         <button
           onClick={handleFitToView}
           className="p-1 rounded hover:bg-gray-300"
-          title="全体を表示"
+          title={t("fitToView")}
         >
           <Maximize size={18} />
         </button>
@@ -379,7 +385,7 @@ export function CutCanvas() {
               onClick={handleTopGutterClick}
               onMouseMove={handleTopGutterMouseMove}
               onMouseLeave={handleGutterMouseLeave}
-              title="クリックで縦カット線を追加"
+              title={t("clickToAddVerticalLine")}
             >
               {/* ハサミアイコンを100px間隔で配置 */}
               {Array.from(
@@ -416,7 +422,7 @@ export function CutCanvas() {
               onClick={handleLeftGutterClick}
               onMouseMove={handleLeftGutterMouseMove}
               onMouseLeave={handleGutterMouseLeave}
-              title="クリックで横カット線を追加"
+              title={t("clickToAddHorizontalLine")}
             >
               {/* ハサミアイコンを100px間隔で配置 */}
               {Array.from(

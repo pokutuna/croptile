@@ -3,12 +3,15 @@ import { Download, Trash2, Pen, Move } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { exportToPng } from "../../utils/image";
 import { LayoutCanvas } from "./LayoutCanvas";
+import { t } from "../../i18n";
+import { useLocale } from "../../hooks/useLocale";
 
 interface LayoutAreaProps {
   widthPercent: number;
 }
 
 export function LayoutArea({ widthPercent }: LayoutAreaProps) {
+  useLocale(); // Re-render on locale change
   const placedCells = useAppStore((state) => state.placedCells);
   const clearLayout = useAppStore((state) => state.clearLayout);
   const useBackground = useAppStore((state) => state.useBackground);
@@ -28,7 +31,7 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
       paintStrokes,
     );
     if (!blob) {
-      alert("エクスポートするセルがありません");
+      alert("No cells to export");
       return;
     }
 
@@ -47,7 +50,7 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
     >
       {/* ヘッダー */}
       <div className="shrink-0 px-4 py-2 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="font-semibold text-gray-700">レイアウト</h2>
+        <h2 className="font-semibold text-gray-700">{t("layout")}</h2>
         <div className="flex items-center gap-3">
           {/* モード切り替え: 移動 / ペン */}
           <div className="flex items-center rounded border border-gray-300 overflow-hidden">
@@ -96,10 +99,10 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
             onClick={clearLayout}
             disabled={placedCells.length === 0}
             className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            title="レイアウトをクリア"
+            title={t("clear")}
           >
             <Trash2 size={16} />
-            クリア
+            {t("clear")}
           </button>
           <button
             onClick={handleExport}
@@ -107,7 +110,7 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
             className="flex items-center gap-1 px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             <Download size={16} />
-            エクスポート
+            {t("export")}
           </button>
         </div>
       </div>

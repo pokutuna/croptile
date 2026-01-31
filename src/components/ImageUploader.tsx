@@ -1,8 +1,11 @@
 import { useCallback, useRef } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { loadImage } from "../utils/image";
+import { t } from "../i18n";
+import { useLocale } from "../hooks/useLocale";
 
 export function ImageUploader() {
+  useLocale(); // Re-render on locale change
   const addImage = useAppStore((state) => state.addImage);
   const recalculateCells = useAppStore((state) => state.recalculateCells);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,10 +72,8 @@ export function ImageUploader() {
         className="hidden"
       />
       <div className="text-gray-500">
-        <p className="text-lg font-medium">
-          画像をドロップ、またはクリックして選択
-        </p>
-        <p className="text-sm mt-1">PNG, JPEG対応</p>
+        <p className="text-lg font-medium">{t("dropOrClickToSelect")}</p>
+        <p className="text-sm mt-1">{t("supportedFormats")}</p>
       </div>
     </div>
   );

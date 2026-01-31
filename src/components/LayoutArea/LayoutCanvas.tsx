@@ -5,6 +5,8 @@ import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
 import type { Cell } from "../../types";
 import { PlacedCellView } from "./PlacedCellView";
+import { t } from "../../i18n";
+import { useLocale } from "../../hooks/useLocale";
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 3;
@@ -12,13 +14,13 @@ const SCALE_STEP = 0.25;
 const GUTTER_SIZE = 20;
 
 const BACKGROUND_PRESETS = [
-  { name: "白", color: "#ffffff" },
-  { name: "クリーム", color: "#fffef0" },
-  { name: "アイボリー", color: "#fffff0" },
-  { name: "セピア薄", color: "#faf0e6" },
-  { name: "セピア", color: "#f5e6d3" },
-  { name: "セピア濃", color: "#e8dcc8" },
-];
+  { key: "white", color: "#ffffff" },
+  { key: "cream", color: "#fffef0" },
+  { key: "ivory", color: "#fffff0" },
+  { key: "sepiaLight", color: "#faf0e6" },
+  { key: "sepia", color: "#f5e6d3" },
+  { key: "sepiaDark", color: "#e8dcc8" },
+] as const;
 
 interface DragState {
   placedCellId: string;
@@ -34,6 +36,7 @@ interface PaintingState {
 }
 
 export function LayoutCanvas() {
+  useLocale(); // Re-render on locale change
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -410,7 +413,7 @@ export function LayoutCanvas() {
           onClick={handleZoomOut}
           disabled={scale <= MIN_SCALE}
           className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="縮小"
+          title={t("zoomOut")}
         >
           <ZoomOut size={18} />
         </button>
@@ -421,14 +424,14 @@ export function LayoutCanvas() {
           onClick={handleZoomIn}
           disabled={scale >= MAX_SCALE}
           className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="拡大"
+          title={t("zoomIn")}
         >
           <ZoomIn size={18} />
         </button>
         <button
           onClick={handleResetZoom}
           className="p-1 rounded hover:bg-gray-300 ml-2"
-          title="100%にリセット"
+          title={t("resetZoom")}
         >
           <RotateCcw size={18} />
         </button>
@@ -436,7 +439,7 @@ export function LayoutCanvas() {
           onClick={handleFitToView}
           disabled={!boundingBox}
           className="p-1 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="全体を表示"
+          title={t("fitToView")}
         >
           <Maximize size={18} />
         </button>
@@ -450,7 +453,7 @@ export function LayoutCanvas() {
               onChange={(e) => setUseBackground(e.target.checked)}
               className="w-4 h-4 rounded border-gray-300"
             />
-            背景を塗りつぶす
+            {t("fillBackground")}
           </label>
           {useBackground && (
             <div className="flex items-center gap-1">
@@ -464,7 +467,7 @@ export function LayoutCanvas() {
                       : "border-gray-300 hover:border-gray-400"
                   }`}
                   style={{ backgroundColor: preset.color }}
-                  title={preset.name}
+                  title={t(preset.key)}
                 />
               ))}
               <input
@@ -472,7 +475,7 @@ export function LayoutCanvas() {
                 value={backgroundColor}
                 onChange={(e) => setBackgroundColor(e.target.value)}
                 className="w-5 h-5 rounded border border-gray-300 cursor-pointer"
-                title="カスタム色"
+                title={t("customColor")}
               />
             </div>
           )}
@@ -493,7 +496,7 @@ export function LayoutCanvas() {
               onMouseMove={handleTopGutterMouseMove}
               onMouseLeave={handleGutterMouseLeave}
               onClick={handleTopGutterClick}
-              title="クリックで縦ガイド線を追加/削除"
+              title={t("clickToAddVerticalGuide")}
             >
               {/* 10px間隔のメモリ */}
               {Array.from({ length: 201 }, (_, i) => i * 10).map((pos) => (
@@ -522,7 +525,7 @@ export function LayoutCanvas() {
                     }}
                   >
                     {gutterHoverIsDelete
-                      ? "ガイドを削除"
+                      ? t("removeGuide")
                       : `${Math.round(gutterHover.position)}px`}
                   </div>
                 </>
@@ -538,7 +541,7 @@ export function LayoutCanvas() {
               onMouseMove={handleLeftGutterMouseMove}
               onMouseLeave={handleGutterMouseLeave}
               onClick={handleLeftGutterClick}
-              title="クリックで横ガイド線を追加/削除"
+              title={t("clickToAddHorizontalGuide")}
             >
               {/* 10px間隔のメモリ */}
               {Array.from({ length: 201 }, (_, i) => i * 10).map((pos) => (
@@ -590,15 +593,13 @@ export function LayoutCanvas() {
                   }}
                 >
                   {gutterHoverIsDelete
-                    ? "ガイドを削除"
+                    ? t("removeGuide")
                     : `${Math.round(gutterHover.position)}px`}
                 </div>
               )}
               {placedCellsWithInfo.length === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-sm text-center px-4">
-                  左の画像上のラベル
-                  <br />
-                  (A-1など)をクリックして追加
+                  {t("clickToAddToLayout")}
                 </div>
               ) : (
                 <>

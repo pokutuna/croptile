@@ -9,6 +9,8 @@ import {
 import { useAppStore } from "../../store/useAppStore";
 import { loadImage } from "../../utils/image";
 import { CutCanvas } from "./CutCanvas";
+import { t } from "../../i18n";
+import { useLocale } from "../../hooks/useLocale";
 
 const MAX_PAGES = 3;
 
@@ -17,6 +19,7 @@ interface CutAreaProps {
 }
 
 export function CutArea({ widthPercent }: CutAreaProps) {
+  useLocale(); // Re-render on locale change
   const images = useAppStore((state) => state.images);
   const activeImageId = useAppStore((state) => state.activeImageId);
   const setActiveImage = useAppStore((state) => state.setActiveImage);
@@ -75,7 +78,7 @@ export function CutArea({ widthPercent }: CutAreaProps) {
   const handleRemoveImage = useCallback(
     (imageId: string, index: number, e: React.MouseEvent) => {
       e.stopPropagation();
-      if (window.confirm(`ページ ${index + 1} を削除しますか?`)) {
+      if (window.confirm(t("deletePageConfirm", { n: index + 1 }))) {
         removeImage(imageId);
       }
     },
@@ -89,7 +92,7 @@ export function CutArea({ widthPercent }: CutAreaProps) {
     >
       {/* ヘッダー */}
       <div className="shrink-0 px-4 py-2 bg-gray-100 border-b border-gray-200 flex items-center gap-3">
-        <h2 className="font-semibold text-gray-700">カット</h2>
+        <h2 className="font-semibold text-gray-700">{t("cut")}</h2>
 
         {/* ページタブ */}
         <div className="flex items-center gap-1 overflow-x-auto">
@@ -111,7 +114,9 @@ export function CutArea({ widthPercent }: CutAreaProps) {
               }`}
               onClick={() => setActiveImage(image.id)}
             >
-              <span>ページ {index + 1}</span>
+              <span>
+                {t("page")} {index + 1}
+              </span>
               <button
                 onClick={(e) => handleRemoveImage(image.id, index, e)}
                 className={`p-0.5 rounded ${
@@ -119,7 +124,7 @@ export function CutArea({ widthPercent }: CutAreaProps) {
                     ? "hover:bg-blue-600"
                     : "hover:bg-gray-200"
                 }`}
-                title="ページを削除"
+                title={t("deletePage")}
               >
                 <X size={14} />
               </button>
@@ -131,7 +136,7 @@ export function CutArea({ widthPercent }: CutAreaProps) {
             <button
               onClick={handleAddImage}
               className="flex items-center gap-1 px-2 py-1 text-sm bg-white text-gray-700 rounded border border-gray-300 hover:bg-gray-50 transition-colors"
-              title="画像追加"
+              title={t("addImage")}
             >
               <ImagePlus size={16} />
             </button>
@@ -148,10 +153,10 @@ export function CutArea({ widthPercent }: CutAreaProps) {
                   ? "bg-blue-500 text-white"
                   : "bg-white text-gray-700 hover:bg-gray-50"
               }`}
-              title="縦に切る"
+              title={t("cutVertical")}
             >
               <FlipHorizontal2 size={16} />
-              縦に切る
+              {t("cutVertical")}
             </button>
             <button
               onClick={() => setCutDirection("horizontal")}
@@ -160,10 +165,10 @@ export function CutArea({ widthPercent }: CutAreaProps) {
                   ? "bg-blue-500 text-white"
                   : "bg-white text-gray-700 hover:bg-gray-50"
               }`}
-              title="横に切る"
+              title={t("cutHorizontal")}
             >
               <FlipVertical2 size={16} />
-              横に切る
+              {t("cutHorizontal")}
             </button>
           </div>
         </div>
@@ -173,10 +178,10 @@ export function CutArea({ widthPercent }: CutAreaProps) {
           onClick={handleClearLines}
           disabled={!hasLinesForActiveImage}
           className="flex items-center gap-1 px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          title="このページの分割線をすべて削除"
+          title={t("deleteAllLinesForPage")}
         >
           <Trash2 size={16} />
-          リセット
+          {t("reset")}
         </button>
       </div>
 

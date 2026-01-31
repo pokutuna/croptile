@@ -1,5 +1,6 @@
 import { useEffect, useRef, memo, useState, useCallback } from "react";
 import type { Cell, PaintStroke } from "../../types";
+import { t } from "../../i18n";
 
 interface PlacedCellInfo {
   id: string;
@@ -208,7 +209,7 @@ export const PlacedCellView = memo(function PlacedCellView({
           e.stopPropagation();
           onRemove(placed.id);
         }}
-        title="クリックで削除"
+        title={t("clickToDelete")}
       >
         {placed.cell.label} ×
       </button>

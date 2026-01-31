@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { HorizontalLine, VerticalLine, CutMode } from "../../types";
+import { t } from "../../i18n";
 
 interface LineOverlayProps {
   horizontalLines: HorizontalLine[];
@@ -191,7 +192,7 @@ export function LineOverlay({
             onMouseEnter={() =>
               setHoveredLine({ type: "horizontal", id: line.id })
             }
-            title="削除"
+            title={t("delete")}
           >
             <X size={14} />
           </button>
@@ -218,7 +219,7 @@ export function LineOverlay({
             onMouseEnter={() =>
               setHoveredLine({ type: "vertical", id: line.id })
             }
-            title="削除"
+            title={t("delete")}
           >
             <X size={14} />
           </button>
