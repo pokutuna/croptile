@@ -116,6 +116,19 @@ export function CutCanvas() {
     );
   }, [activeImage, zoomFitToView]);
 
+  // 画像が読み込まれたら自動的にフィット
+  useEffect(() => {
+    if (activeImage && containerRef.current) {
+      // コンテナのサイズが確定するのを待つ
+      requestAnimationFrame(() => {
+        zoomFitToView(
+          { width: activeImage.width, height: activeImage.height },
+          containerRef,
+        );
+      });
+    }
+  }, [activeImage, zoomFitToView]);
+
   const handleFitToWidth = useCallback(() => {
     if (!activeImage) return;
     zoomFitToWidth(activeImage.width, containerRef);

@@ -4,7 +4,12 @@ https://pokutuna.github.io/croptile/
 
 Split. Arrange. Done.
 
+![CropTile Screenshot](croptile.png)
+
 A browser-based tool for splitting images into sections and rearranging them into new layouts. Perfect for extracting portions of sheet music images to create layouts for YouTube performance videos.
+
+- No upload required - all processing happens in your browser
+- Your images never leave your device
 
 ## Features
 
