@@ -7,7 +7,7 @@ import { useAppStore } from "./store/useAppStore";
 
 function App() {
   const recalculateCells = useAppStore((state) => state.recalculateCells);
-  const [splitRatio, setSplitRatio] = useState(0.6); // 左パネルの割合（60%）
+  const [splitRatio, setSplitRatio] = useState(0.5); // 左パネルの割合（50%）
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLElement>(null);
 

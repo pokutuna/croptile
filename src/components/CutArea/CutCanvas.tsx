@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { Scissors } from "lucide-react";
+import { Scissors, SquareStop } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { findCellBoundsAtPoint } from "../../utils/geometry";
-import type { DraggingLine } from "../../types";
+import type { DraggingLine, LabelPosition } from "../../types";
 import { LineOverlay } from "./LineOverlay";
 import { CellOverlay } from "./CellOverlay";
 import { ImageUploader } from "../ImageUploader";
@@ -57,6 +57,17 @@ export function CutCanvas() {
   const cells = useAppStore((state) => state.cells);
   const placedCells = useAppStore((state) => state.placedCells);
   const cutDirection = useAppStore((state) => state.cutDirection);
+  const labelPosition = useAppStore((state) => state.labelPosition);
+  const cycleLabelPosition = useAppStore((state) => state.cycleLabelPosition);
+
+  const labelPositionIcons: Record<LabelPosition, string> = {
+    "top-left": "↖",
+    "top-right": "↗",
+    center: "✛",
+    "bottom-left": "↙",
+    "bottom-right": "↘",
+  };
+
   const addHorizontalLine = useAppStore((state) => state.addHorizontalLine);
   const addVerticalLine = useAppStore((state) => state.addVerticalLine);
   const updateHorizontalLine = useAppStore(
@@ -364,6 +375,17 @@ export function CutCanvas() {
           minScale={minScale}
           maxScale={maxScale}
         />
+        {/* ラベル位置切り替えボタン */}
+        <button
+          onClick={cycleLabelPosition}
+          className="flex items-center gap-0.5 px-1.5 py-1 rounded hover:bg-gray-300"
+          title={t("labelPosition")}
+        >
+          <SquareStop size={16} />
+          <span className="text-sm font-bold">
+            {labelPositionIcons[labelPosition]}
+          </span>
+        </button>
       </div>
 
       {/* キャンバス領域 */}
@@ -575,6 +597,7 @@ export function CutCanvas() {
                 cells={imageCells}
                 placedCellRects={placedCellRects}
                 scale={scale}
+                labelPosition={labelPosition}
                 onCellClick={handleCellClick}
               />
 

@@ -172,17 +172,18 @@ export function LineOverlay({
         ))}
       </svg>
 
-      {/* 削除ボタン - 横線 */}
+      {/* 削除ボタン - 横線 (左右中央) */}
       {horizontalLines.map((line) => {
         const isHovered =
           hoveredLine?.type === "horizontal" && hoveredLine?.id === line.id;
         if (!isHovered) return null;
+        const centerX = ((line.leftBoundX + line.rightBoundX) / 2) * scale - 10;
         return (
           <button
             key={`del-h-${line.id}`}
             className="absolute pointer-events-auto bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors shadow-md"
             style={{
-              left: line.leftBoundX * scale + 8,
+              left: centerX,
               top: line.y * scale - 10,
             }}
             onClick={(e) => {
@@ -199,18 +200,19 @@ export function LineOverlay({
         );
       })}
 
-      {/* 削除ボタン - 縦線 */}
+      {/* 削除ボタン - 縦線 (上下中央) */}
       {verticalLines.map((line) => {
         const isHovered =
           hoveredLine?.type === "vertical" && hoveredLine?.id === line.id;
         if (!isHovered) return null;
+        const centerY = ((line.topBoundY + line.bottomBoundY) / 2) * scale - 10;
         return (
           <button
             key={`del-v-${line.id}`}
             className="absolute pointer-events-auto bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors shadow-md"
             style={{
               left: line.x * scale - 10,
-              top: line.topBoundY * scale + 8,
+              top: centerY,
             }}
             onClick={(e) => {
               e.stopPropagation();

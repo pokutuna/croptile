@@ -50,7 +50,7 @@ const messages = {
     supportedFormats: "PNG, JPEG supported",
 
     // LayoutCanvas
-    fillBackground: "Fill background",
+    fillBackground: "Fill gaps",
     clickToAddToLayout: "Click labels on the left image to add",
 
     // Tutorial
@@ -126,7 +126,7 @@ const messages = {
     supportedFormats: "PNG, JPEG対応",
 
     // LayoutCanvas
-    fillBackground: "背景を塗りつぶす",
+    fillBackground: "余白を塗る",
     clickToAddToLayout: "左の画像上のラベルをクリックして追加",
 
     // Tutorial
