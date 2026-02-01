@@ -104,3 +104,11 @@ export interface GuideLine {
   type: "horizontal" | "vertical";
   position: number;
 }
+
+// ラベル位置
+export type LabelPosition =
+  | "top-left"
+  | "top-right"
+  | "center"
+  | "bottom-left"
+  | "bottom-right";

@@ -6,6 +6,7 @@ import type {
   Cell,
   PlacedCell,
   PaintStroke,
+  LabelPosition,
 } from "../types";
 import { calculateCells, assignCellLabels } from "../utils/geometry";
 
@@ -18,6 +19,9 @@ interface AppState {
 
   // カット方向
   cutDirection: CutDirection;
+
+  // ラベル位置
+  labelPosition: LabelPosition;
 
   // レイアウト背景オプション
   useBackground: boolean;
@@ -52,6 +56,9 @@ interface AppState {
 
   // アクション - カット方向
   setCutDirection: (direction: CutDirection) => void;
+
+  // アクション - ラベル位置
+  cycleLabelPosition: () => void;
 
   // アクション - 背景オプション
   setUseBackground: (value: boolean) => void;
@@ -100,6 +107,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   images: [],
   activeImageId: null,
   cutDirection: "vertical" as CutDirection,
+  labelPosition: "top-left" as LabelPosition,
   useBackground: false,
   backgroundColor: "#ffffff",
   horizontalLines: [],
@@ -147,6 +155,21 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   setCutDirection: (direction) => {
     set({ cutDirection: direction });
+  },
+
+  cycleLabelPosition: () => {
+    const positions: LabelPosition[] = [
+      "top-left",
+      "top-right",
+      "center",
+      "bottom-left",
+      "bottom-right",
+    ];
+    set((state) => {
+      const currentIndex = positions.indexOf(state.labelPosition);
+      const nextIndex = (currentIndex + 1) % positions.length;
+      return { labelPosition: positions[nextIndex] };
+    });
   },
 
   setUseBackground: (value) => {

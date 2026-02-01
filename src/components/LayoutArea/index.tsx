@@ -1,5 +1,14 @@
 import { useCallback } from "react";
-import { Download, Trash2, Pen, Move, ChevronDown, Undo2 } from "lucide-react";
+import {
+  Download,
+  Trash2,
+  Pen,
+  Move,
+  ChevronDown,
+  Undo2,
+  Pipette,
+} from "lucide-react";
+import { getContrastColor } from "../../utils/color";
 import { useAppStore } from "../../store/useAppStore";
 import { exportToPng } from "../../utils/image";
 import { LayoutCanvas } from "./LayoutCanvas";
@@ -106,60 +115,81 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
       style={{ width: `${widthPercent}%` }}
     >
       {/* ヘッダー */}
-      <div className="shrink-0 px-4 py-2 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
+      <div className="shrink-0 px-4 py-2 bg-gray-100 border-b border-gray-200 flex items-center">
         <h2 className="font-semibold text-gray-700">{t("layout")}</h2>
+
+        {/* 中央: モード切り替え + ペン設定 */}
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-3">
+            {/* モード切り替え: 移動 / ペン */}
+            <div className="flex items-center rounded border border-gray-300 overflow-hidden">
+              <button
+                onClick={() => setPaintMode(false)}
+                className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
+                  !paintMode
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+                title={t("moveMode")}
+              >
+                <Move size={16} />
+                {t("moveMode")}
+              </button>
+              <button
+                onClick={() => setPaintMode(true)}
+                className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
+                  paintMode
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+                title={t("penMode")}
+              >
+                <Pen size={16} />
+                {t("penMode")}
+              </button>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={paintColor}
+                  onChange={(e) => setPaintColor(e.target.value)}
+                  className="w-6 h-6 rounded border border-gray-300 cursor-pointer opacity-0 absolute inset-0 z-10"
+                  title="色を選択"
+                />
+                <div
+                  className="w-6 h-6 rounded border border-gray-300 flex items-center justify-center pointer-events-none"
+                  style={{ backgroundColor: paintColor }}
+                >
+                  <Pipette
+                    size={14}
+                    style={{ color: getContrastColor(paintColor) }}
+                  />
+                </div>
+              </div>
+              <input
+                type="range"
+                min="2"
+                max="50"
+                value={paintWidth}
+                onChange={(e) => setPaintWidth(Number(e.target.value))}
+                className="w-16 h-4"
+                title={`ペン幅: ${paintWidth}px`}
+              />
+              <button
+                onClick={undoLastPaintStroke}
+                disabled={paintStrokes.length === 0}
+                className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo2 size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 右側: クリア + ダウンロード */}
         <div className="flex items-center gap-3">
-          {/* モード切り替え: 移動 / ペン */}
-          <div className="flex items-center rounded border border-gray-300 overflow-hidden">
-            <button
-              onClick={() => setPaintMode(false)}
-              className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
-                !paintMode
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-              title="移動モード"
-            >
-              <Move size={16} />
-            </button>
-            <button
-              onClick={() => setPaintMode(true)}
-              className={`flex items-center gap-1 px-2 py-1 text-sm transition-colors ${
-                paintMode
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-              title="ペンモード"
-            >
-              <Pen size={16} />
-            </button>
-          </div>
-          <div className="flex items-center gap-1">
-            <input
-              type="color"
-              value={paintColor}
-              onChange={(e) => setPaintColor(e.target.value)}
-              className="w-6 h-6 rounded border border-gray-300 cursor-pointer"
-              title="色を選択"
-            />
-            <input
-              type="range"
-              min="2"
-              max="50"
-              value={paintWidth}
-              onChange={(e) => setPaintWidth(Number(e.target.value))}
-              className="w-16 h-4"
-              title={`ペン幅: ${paintWidth}px`}
-            />
-            <button
-              onClick={undoLastPaintStroke}
-              disabled={paintStrokes.length === 0}
-              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 size={16} />
-            </button>
-          </div>
           <button
             onClick={clearLayout}
             disabled={placedCells.length === 0}

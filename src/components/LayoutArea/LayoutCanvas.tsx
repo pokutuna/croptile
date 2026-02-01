@@ -2,7 +2,14 @@ import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRef } from "react";
 import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
-import type { Cell, DragState, PaintingState, GuideLine } from "../../types";
+import type {
+  Cell,
+  DragState,
+  PaintingState,
+  GuideLine,
+  LabelPosition,
+} from "../../types";
+import { SquareStop } from "lucide-react";
 import { PlacedCellView } from "./PlacedCellView";
 import { ZoomControls } from "./ZoomControls";
 import { BackgroundControls } from "./BackgroundControls";
@@ -78,6 +85,16 @@ export function LayoutCanvas() {
   const setSelectedPlacedCell = useAppStore(
     (state) => state.setSelectedPlacedCell,
   );
+  const labelPosition = useAppStore((state) => state.labelPosition);
+  const cycleLabelPosition = useAppStore((state) => state.cycleLabelPosition);
+
+  const labelPositionIcons: Record<LabelPosition, string> = {
+    "top-left": "↖",
+    "top-right": "↗",
+    center: "✛",
+    "bottom-left": "↙",
+    "bottom-right": "↘",
+  };
 
   // 配置されたセルの情報
   const placedCellsWithInfo = useMemo(() => {
@@ -418,6 +435,17 @@ export function LayoutCanvas() {
           minScale={minScale}
           maxScale={maxScale}
         />
+        {/* ラベル位置切り替えボタン */}
+        <button
+          onClick={cycleLabelPosition}
+          className="flex items-center gap-0.5 px-1.5 py-1 rounded hover:bg-gray-300"
+          title={t("labelPosition")}
+        >
+          <SquareStop size={16} />
+          <span className="text-sm font-bold">
+            {labelPositionIcons[labelPosition]}
+          </span>
+        </button>
         <BackgroundControls
           useBackground={useBackground}
           backgroundColor={backgroundColor}
@@ -574,6 +602,7 @@ export function LayoutCanvas() {
                       }
                       paintColor={paintColor}
                       paintWidth={paintWidth}
+                      labelPosition={labelPosition}
                       onMouseDown={handleMouseDown}
                       onPaintStart={handleCellPaintStart}
                       onRemove={removePlacedCell}

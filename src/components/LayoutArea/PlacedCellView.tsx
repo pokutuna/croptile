@@ -1,6 +1,25 @@
 import { useEffect, useRef, memo, useState, useCallback } from "react";
-import type { Cell, PaintStroke } from "../../types";
+import type { Cell, PaintStroke, LabelPosition } from "../../types";
 import { t } from "../../i18n";
+
+function getLabelPositionStyle(position: LabelPosition): React.CSSProperties {
+  switch (position) {
+    case "top-left":
+      return { top: 4, left: 4 };
+    case "top-right":
+      return { top: 4, right: 4 };
+    case "center":
+      return {
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      };
+    case "bottom-left":
+      return { bottom: 4, left: 4 };
+    case "bottom-right":
+      return { bottom: 4, right: 4 };
+  }
+}
 
 interface PlacedCellInfo {
   id: string;
@@ -25,6 +44,7 @@ interface PlacedCellViewProps {
   paintingState: PaintingState | null;
   paintColor: string;
   paintWidth: number;
+  labelPosition: LabelPosition;
   onMouseDown: (e: React.MouseEvent, placedCellId: string) => void;
   onPaintStart: (
     e: React.MouseEvent,
@@ -53,6 +73,7 @@ export const PlacedCellView = memo(function PlacedCellView({
   paintingState,
   paintColor,
   paintWidth,
+  labelPosition,
   onMouseDown,
   onPaintStart,
   onRemove,
@@ -195,7 +216,8 @@ export const PlacedCellView = memo(function PlacedCellView({
       </svg>
 
       <button
-        className="absolute top-1 left-1 text-xs font-bold px-1.5 py-0.5 rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
+        className="absolute text-xs font-bold px-1.5 py-0.5 rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
+        style={getLabelPositionStyle(labelPosition)}
         onClick={(e) => {
           e.stopPropagation();
           onRemove(placed.id);

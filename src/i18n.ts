@@ -2,7 +2,7 @@ const messages = {
   en: {
     // Toolbar
     tagline: "Split. Arrange. Done.",
-    download: "Download",
+    download: "Save",
     saveAs: "Save As...",
 
     // CutArea
@@ -27,6 +27,7 @@ const messages = {
     clickToAddHorizontalLine: "Click to add horizontal cut line",
     clickToAddVerticalLine: "Click to add vertical cut line",
     clickToEditZoom: "Click to edit, scroll to adjust",
+    labelPosition: "Label position",
 
     // LineOverlay
     delete: "Delete",
@@ -38,6 +39,8 @@ const messages = {
     bgColor: "Background",
     paintMode: "Paint",
     paintWidth: "Width",
+    moveMode: "Move",
+    penMode: "Pen",
 
     // PlacedCell
     removeFromLayout: "Remove from layout",
@@ -70,16 +73,12 @@ const messages = {
 
     // Background presets
     white: "White",
-    cream: "Cream",
-    ivory: "Ivory",
-    sepiaLight: "Sepia Light",
-    sepia: "Sepia",
-    sepiaDark: "Sepia Dark",
+    lightGray: "Light Gray",
   },
   ja: {
     // Toolbar
     tagline: "切って、並べて、完成",
-    download: "ダウンロード",
+    download: "保存",
     saveAs: "名前を付けて保存...",
 
     // CutArea
@@ -104,6 +103,7 @@ const messages = {
     clickToAddHorizontalLine: "クリックで横カット線を追加",
     clickToAddVerticalLine: "クリックで縦カット線を追加",
     clickToEditZoom: "クリックで編集、スクロールで調整",
+    labelPosition: "ラベル位置",
 
     // LineOverlay
     delete: "削除",
@@ -115,6 +115,8 @@ const messages = {
     bgColor: "背景色",
     paintMode: "ペン",
     paintWidth: "太さ",
+    moveMode: "移動",
+    penMode: "ペン",
 
     // PlacedCell
     removeFromLayout: "レイアウトから削除",
@@ -147,11 +149,7 @@ const messages = {
 
     // Background presets
     white: "白",
-    cream: "クリーム",
-    ivory: "アイボリー",
-    sepiaLight: "セピア薄",
-    sepia: "セピア",
-    sepiaDark: "セピア濃",
+    lightGray: "薄いグレー",
   },
 } as const;
 

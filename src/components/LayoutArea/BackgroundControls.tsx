@@ -1,13 +1,11 @@
+import { Pipette } from "lucide-react";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
+import { getContrastColor } from "../../utils/color";
 
 const BACKGROUND_PRESETS = [
   { key: "white", color: "#ffffff" },
-  { key: "cream", color: "#fffef0" },
-  { key: "ivory", color: "#fffff0" },
-  { key: "sepiaLight", color: "#faf0e6" },
-  { key: "sepia", color: "#f5e6d3" },
-  { key: "sepiaDark", color: "#e8dcc8" },
+  { key: "lightGray", color: "#f0f0f0" },
 ] as const;
 
 interface BackgroundControlsProps {
@@ -24,6 +22,10 @@ export function BackgroundControls({
   onBackgroundColorChange,
 }: BackgroundControlsProps) {
   useLocale();
+
+  const isPresetColor = BACKGROUND_PRESETS.some(
+    (p) => p.color === backgroundColor,
+  );
 
   return (
     <div className="flex items-center gap-2 ml-auto">
@@ -51,13 +53,34 @@ export function BackgroundControls({
               title={t(preset.key)}
             />
           ))}
-          <input
-            type="color"
-            value={backgroundColor}
-            onChange={(e) => onBackgroundColorChange(e.target.value)}
-            className="w-5 h-5 rounded border border-gray-300 cursor-pointer"
-            title={t("customColor")}
-          />
+          <div className="relative">
+            <input
+              type="color"
+              value={backgroundColor}
+              onChange={(e) => onBackgroundColorChange(e.target.value)}
+              className="w-5 h-5 rounded border border-gray-300 cursor-pointer opacity-0 absolute inset-0 z-10"
+              title={t("customColor")}
+            />
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center pointer-events-none ${
+                !isPresetColor
+                  ? "border-blue-500"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+              style={{
+                backgroundColor: isPresetColor ? "#e5e5e5" : backgroundColor,
+              }}
+            >
+              <Pipette
+                size={12}
+                style={{
+                  color: getContrastColor(
+                    isPresetColor ? "#e5e5e5" : backgroundColor,
+                  ),
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
