@@ -65,7 +65,7 @@ export function ImageUploader() {
 
   return (
     <div
-      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+      className={`border-2 border-dashed rounded-lg px-8 py-24 text-center transition-colors flex flex-col items-center justify-center ${
         isLoading
           ? "border-blue-400 bg-blue-50 cursor-wait"
           : "border-gray-300 cursor-pointer hover:border-blue-400 hover:bg-blue-50"

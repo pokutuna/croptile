@@ -338,16 +338,6 @@ export function CutCanvas() {
     );
   }, [activeImage, mousePos, imageHLines, imageVLines]);
 
-  if (!activeImage) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="max-w-md w-full">
-          <ImageUploader />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* ズームコントロール */}
@@ -356,7 +346,7 @@ export function CutCanvas() {
           scale={scale}
           canZoomIn={canZoomIn}
           canZoomOut={canZoomOut}
-          canFit={true}
+          canFit={!!activeImage}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onResetZoom={handleResetZoom}
@@ -383,38 +373,48 @@ export function CutCanvas() {
       {/* キャンバス領域 */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto"
+        className={
+          activeImage ? "flex-1 overflow-auto" : "flex-1 flex flex-col"
+        }
         style={{
-          backgroundColor: "#e5e5e5",
-          backgroundImage:
-            "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
-          backgroundSize: "16px 16px",
-          backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+          backgroundColor: activeImage ? "#e5e5e5" : "#f3f4f6",
+          ...(activeImage && {
+            backgroundImage:
+              "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+            backgroundSize: "16px 16px",
+            backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+          }),
         }}
         onMouseUp={handleMouseUp}
       >
-        <div className="inline-block align-top">
+        <div
+          className={
+            activeImage ? "inline-block align-top" : "flex flex-col flex-1"
+          }
+        >
           {/* 上端ガター（縦線用） */}
           <div className="flex">
             <div
-              className="bg-gray-300"
+              className="bg-gray-300 shrink-0"
               style={{ width: GUTTER_SIZE, height: GUTTER_SIZE }}
             />
             <div
-              className="cursor-crosshair bg-gray-300 hover:bg-gray-400 transition-colors relative flex items-center overflow-hidden"
+              className={`bg-gray-300 relative flex items-center overflow-hidden ${activeImage ? "shrink-0 cursor-crosshair hover:bg-gray-400 transition-colors" : "flex-1"}`}
               style={{
-                width: activeImage.width * scale,
+                width: activeImage ? activeImage.width * scale : undefined,
                 height: GUTTER_SIZE,
               }}
-              onClick={handleTopGutterClick}
-              onMouseMove={handleTopGutterMouseMove}
-              onMouseLeave={handleGutterMouseLeave}
-              title={t("clickToAddVerticalLine")}
+              onClick={activeImage ? handleTopGutterClick : undefined}
+              onMouseMove={activeImage ? handleTopGutterMouseMove : undefined}
+              onMouseLeave={activeImage ? handleGutterMouseLeave : undefined}
+              title={activeImage ? t("clickToAddVerticalLine") : undefined}
             >
               {/* 100pxごとに区切り、ハサミ2つまたはテキストを交互配置 */}
               {(() => {
                 const items: React.ReactNode[] = [];
-                const totalWidth = activeImage.width * scale;
+                const totalWidth = activeImage
+                  ? activeImage.width * scale
+                  : 1000;
                 const cellSize = 100;
                 const count = Math.ceil(totalWidth / cellSize);
 
@@ -485,23 +485,25 @@ export function CutCanvas() {
             </div>
           </div>
 
-          <div className="flex">
+          <div className="flex flex-1">
             {/* 左端ガター（横線用） */}
             <div
-              className="cursor-crosshair bg-gray-300 hover:bg-gray-400 transition-colors relative flex flex-col items-center overflow-hidden"
+              className={`bg-gray-300 relative flex flex-col items-center overflow-hidden shrink-0 ${activeImage ? "cursor-crosshair hover:bg-gray-400 transition-colors" : ""}`}
               style={{
                 width: GUTTER_SIZE,
-                height: activeImage.height * scale,
+                height: activeImage ? activeImage.height * scale : undefined,
               }}
-              onClick={handleLeftGutterClick}
-              onMouseMove={handleLeftGutterMouseMove}
-              onMouseLeave={handleGutterMouseLeave}
-              title={t("clickToAddHorizontalLine")}
+              onClick={activeImage ? handleLeftGutterClick : undefined}
+              onMouseMove={activeImage ? handleLeftGutterMouseMove : undefined}
+              onMouseLeave={activeImage ? handleGutterMouseLeave : undefined}
+              title={activeImage ? t("clickToAddHorizontalLine") : undefined}
             >
               {/* 100pxごとに区切り、ハサミ2つまたはテキストを交互配置 */}
               {(() => {
                 const items: React.ReactNode[] = [];
-                const totalHeight = activeImage.height * scale;
+                const totalHeight = activeImage
+                  ? activeImage.height * scale
+                  : 800;
                 const cellSize = 100;
                 const count = Math.ceil(totalHeight / cellSize);
 
@@ -571,43 +573,70 @@ export function CutCanvas() {
               )}
             </div>
 
-            {/* 画像とオーバーレイ */}
-            <div
-              className="relative"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              onClick={handleClick}
-              style={{
-                cursor:
-                  cutDirection === "horizontal" ? "row-resize" : "col-resize",
-              }}
-            >
-              <canvas ref={canvasRef} className="block" />
+            {/* 画像とオーバーレイ、または ImageUploader */}
+            {activeImage ? (
+              <div
+                className="relative"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                onClick={handleClick}
+                style={{
+                  cursor:
+                    cutDirection === "horizontal" ? "row-resize" : "col-resize",
+                }}
+              >
+                <canvas ref={canvasRef} className="block" />
 
-              {/* セルオーバーレイ */}
-              <CellOverlay
-                cells={imageCells}
-                placedCellRects={placedCellRects}
-                scale={scale}
-                labelPosition={labelPosition}
-                onCellClick={handleCellClick}
-              />
+                {/* セルオーバーレイ */}
+                <CellOverlay
+                  cells={imageCells}
+                  placedCellRects={placedCellRects}
+                  scale={scale}
+                  labelPosition={labelPosition}
+                  onCellClick={handleCellClick}
+                />
 
-              {/* 線オーバーレイ */}
-              <LineOverlay
-                horizontalLines={imageHLines}
-                verticalLines={imageVLines}
-                scale={scale}
-                imageWidth={activeImage.width}
-                imageHeight={activeImage.height}
-                mousePos={mousePos}
-                cutMode={cutDirection}
-                previewCellBounds={previewCellBounds}
-                gutterPreview={gutterPos}
-                onLineMouseDown={handleLineMouseDown}
-                onLineDelete={handleLineDelete}
-              />
-            </div>
+                {/* 線オーバーレイ */}
+                <LineOverlay
+                  horizontalLines={imageHLines}
+                  verticalLines={imageVLines}
+                  scale={scale}
+                  imageWidth={activeImage.width}
+                  imageHeight={activeImage.height}
+                  mousePos={mousePos}
+                  cutMode={cutDirection}
+                  previewCellBounds={previewCellBounds}
+                  gutterPreview={gutterPos}
+                  onLineMouseDown={handleLineMouseDown}
+                  onLineDelete={handleLineDelete}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col relative">
+                {/* 説明テキスト (上端寄り) */}
+                <div className="text-center pt-12 pb-4">
+                  <span className="text-3xl font-bold text-gray-500">
+                    {t("panelDescriptionCut")}
+                  </span>
+                </div>
+                {/* ImageUploader (中央) */}
+                <div className="flex-1 flex items-center justify-center px-16 pb-16">
+                  <div className="max-w-2xl w-full">
+                    <ImageUploader />
+                  </div>
+                </div>
+                {/* ガターヒント (上端ガターを指す) */}
+                <div className="absolute top-1 left-8 flex items-center gap-1 text-xs text-gray-500">
+                  <span>↑</span>
+                  <span>{t("gutterHintVertical")}</span>
+                </div>
+                {/* ガターヒント (左端ガターを指す) */}
+                <div className="absolute top-12 left-1 flex items-center gap-1 text-xs text-gray-500 [writing-mode:vertical-rl]">
+                  <span>↓</span>
+                  <span>{t("gutterHintHorizontal")}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

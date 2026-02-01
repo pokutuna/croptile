@@ -24,8 +24,8 @@ const messages = {
     fitToView: "Fit to View",
     fitToWidth: "Fit to Width",
     fitToHeight: "Fit to Height",
-    clickToAddHorizontalLine: "Click to add horizontal cut line",
-    clickToAddVerticalLine: "Click to add vertical cut line",
+    clickToAddHorizontalLine: "Click to add horizontal split line",
+    clickToAddVerticalLine: "Click to add vertical split line",
     clickToEditZoom: "Click to edit, scroll to adjust",
     labelPosition: "Label position",
 
@@ -58,9 +58,9 @@ const messages = {
     tutorialStep2: "Draw lines to split the image into sections",
     tutorialStep3Pre: "Hover over a tile and click",
     tutorialStep3Post: "to place it here",
-    tutorialStep4: "Arrange the sections by dragging",
+    tutorialStep4: "Arrange the tiles by dragging",
     tutorialStep4Sub: "Use the pen tool to erase or draw",
-    tutorialStep5: "Download your result",
+    tutorialStep5: "Save your result",
     tutorialStep6Pre: "Click",
     tutorialStep6Post: "to start a new layout",
     clickToAddVerticalGuide: "Click to add/remove vertical guide",
@@ -71,13 +71,19 @@ const messages = {
     clickToAddCell: "Click to add to layout",
     addCell: "+Add",
 
+    // Panel descriptions
+    panelDescriptionCut: "Split images here",
+    panelDescriptionLayout: "Arrange tiles here",
+    gutterHintVertical: "Click to split vertically across full width",
+    gutterHintHorizontal: "Click to split horizontally across full height",
+
     // Background presets
     white: "White",
     lightGray: "Light Gray",
 
     // Errors
     imageLoadFailed: "Failed to load image: {name}",
-    noContentToExport: "No cells to export",
+    noContentToExport: "No tiles to export",
   },
   ja: {
     // Toolbar
@@ -95,7 +101,7 @@ const messages = {
     deletePage: "ページを削除",
     deletePageConfirm: "ページ {n} を削除しますか?",
     addImagePlaceholder: "画像を追加してください",
-    deleteAllLinesForPage: "このページの分割線をすべて削除",
+    deleteAllLinesForPage: "このページのカット線をすべて削除",
 
     // CutCanvas
     zoomIn: "拡大",
@@ -135,7 +141,7 @@ const messages = {
 
     // Tutorial
     tutorialStep1: "左のカットパネルに画像を読み込む",
-    tutorialStep2: "分割線を引いてセクションに分ける",
+    tutorialStep2: "カット線を引いて画像を切る",
     tutorialStep3Pre: "タイルにホバーして",
     tutorialStep3Post: "をクリック",
     tutorialStep4: "ドラッグして配置を調整",
@@ -151,13 +157,19 @@ const messages = {
     clickToAddCell: "クリックでレイアウトに追加",
     addCell: "+追加",
 
+    // Panel descriptions
+    panelDescriptionCut: "こちらで画像を切って",
+    panelDescriptionLayout: "こちらで並べて",
+    gutterHintVertical: "クリックで縦に端から端まで切れます",
+    gutterHintHorizontal: "クリックで横に端から端まで切れます",
+
     // Background presets
     white: "白",
     lightGray: "薄いグレー",
 
     // Errors
     imageLoadFailed: "画像の読み込みに失敗しました: {name}",
-    noContentToExport: "エクスポートするセルがありません",
+    noContentToExport: "保存するタイルがありません",
   },
 } as const;
 

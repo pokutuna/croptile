@@ -454,8 +454,11 @@ export function LayoutCanvas() {
               className="bg-gray-200 shrink-0"
             />
             <div
-              className="bg-gray-200 cursor-crosshair hover:bg-gray-300 transition-colors relative shrink-0 overflow-hidden"
-              style={{ height: GUTTER_SIZE, minWidth: 1000 }}
+              className={`bg-gray-200 cursor-crosshair hover:bg-gray-300 transition-colors relative overflow-hidden ${placedCellsWithInfo.length > 0 ? "shrink-0" : "flex-1"}`}
+              style={{
+                height: GUTTER_SIZE,
+                minWidth: placedCellsWithInfo.length > 0 ? 1000 : undefined,
+              }}
               onMouseMove={handleTopGutterMouseMove}
               onMouseLeave={handleGutterMouseLeave}
               onClick={handleTopGutterClick}
@@ -499,7 +502,10 @@ export function LayoutCanvas() {
             {/* 左ガター */}
             <div
               className="bg-gray-200 cursor-crosshair hover:bg-gray-300 transition-colors relative shrink-0 sticky left-0 z-10 overflow-hidden"
-              style={{ width: GUTTER_SIZE, minHeight: 1000 }}
+              style={{
+                width: GUTTER_SIZE,
+                minHeight: placedCellsWithInfo.length > 0 ? 1000 : undefined,
+              }}
               onMouseMove={handleLeftGutterMouseMove}
               onMouseLeave={handleGutterMouseLeave}
               onClick={handleLeftGutterClick}
@@ -664,12 +670,23 @@ export function LayoutCanvas() {
         </div>
 
         {placedCellsWithInfo.length === 0 && (
-          <TutorialPanel
-            hasImages={images.length > 0}
-            hasCells={cells.length > 1}
-            hasCompletedTutorial={hasCompletedTutorial}
-            hasCleared={hasCleared}
-          />
+          <div className="absolute inset-0 flex flex-col items-center pointer-events-none z-20">
+            {/* 説明テキスト (上端寄り) */}
+            <div className="pt-12 pb-4">
+              <span className="text-3xl font-bold text-gray-500 bg-white/50 px-4 py-2 rounded">
+                {t("panelDescriptionLayout")}
+              </span>
+            </div>
+            {/* TutorialPanel (中央) */}
+            <div className="flex-1 flex items-center justify-center pointer-events-auto">
+              <TutorialPanel
+                hasImages={images.length > 0}
+                hasCells={cells.length > 1}
+                hasCompletedTutorial={hasCompletedTutorial}
+                hasCleared={hasCleared}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>
