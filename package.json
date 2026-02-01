@@ -1,7 +1,14 @@
 {
   "name": "croptile",
-  "private": true,
   "version": "0.1.0",
+  "description": "Split images into sections and arrange them into new layouts",
+  "author": "pokutuna",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pokutuna/croptile.git"
+  },
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",

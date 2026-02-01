@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-lite
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -29,7 +29,7 @@ jobs:
           path: dist
 
   deploy:
-    runs-on: ubuntu-lite
+    runs-on: ubuntu-slim
     needs: build
     environment:
       name: github-pages
