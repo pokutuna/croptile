@@ -57,8 +57,8 @@ export function CutArea({ widthPercent }: CutAreaProps) {
         try {
           const scoreImage = await loadImage(file);
           addImage(scoreImage);
-        } catch (error) {
-          console.error("Failed to load image:", error);
+        } catch {
+          alert(t("imageLoadFailed", { name: file.name }));
         }
       }
       recalculateCells();

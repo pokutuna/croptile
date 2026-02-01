@@ -74,6 +74,10 @@ const messages = {
     // Background presets
     white: "White",
     lightGray: "Light Gray",
+
+    // Errors
+    imageLoadFailed: "Failed to load image: {name}",
+    noContentToExport: "No cells to export",
   },
   ja: {
     // Toolbar
@@ -150,6 +154,10 @@ const messages = {
     // Background presets
     white: "白",
     lightGray: "薄いグレー",
+
+    // Errors
+    imageLoadFailed: "画像の読み込みに失敗しました: {name}",
+    noContentToExport: "エクスポートするセルがありません",
   },
 } as const;
 

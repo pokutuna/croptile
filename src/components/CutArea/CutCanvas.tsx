@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Scissors, SquareStop } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { findCellBoundsAtPoint } from "../../utils/geometry";
-import type { DraggingLine, LabelPosition } from "../../types";
+import { labelPositionIcons } from "../../utils/label";
+import type { DraggingLine } from "../../types";
 import { LineOverlay } from "./LineOverlay";
 import { CellOverlay } from "./CellOverlay";
 import { ImageUploader } from "../ImageUploader";
@@ -11,8 +12,7 @@ import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
 import { useZoom } from "../../hooks/useZoom";
 import { usePinchZoom } from "../../hooks/usePinchZoom";
-
-const GUTTER_SIZE = 16; // 左端・上端のカット領域の幅
+import { CUT_GUTTER_SIZE as GUTTER_SIZE } from "../../constants";
 
 export function CutCanvas() {
   useLocale(); // Re-render on locale change
@@ -59,14 +59,6 @@ export function CutCanvas() {
   const cutDirection = useAppStore((state) => state.cutDirection);
   const labelPosition = useAppStore((state) => state.labelPosition);
   const cycleLabelPosition = useAppStore((state) => state.cycleLabelPosition);
-
-  const labelPositionIcons: Record<LabelPosition, string> = {
-    "top-left": "↖",
-    "top-right": "↗",
-    center: "✛",
-    "bottom-left": "↙",
-    "bottom-right": "↘",
-  };
 
   const addHorizontalLine = useAppStore((state) => state.addHorizontalLine);
   const addVerticalLine = useAppStore((state) => state.addVerticalLine);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Cell, LabelPosition } from "../../types";
 import { t } from "../../i18n";
+import { getLabelPositionStyle } from "../../utils/label";
 
 interface CellOverlayProps {
   cells: Cell[];
@@ -8,25 +9,6 @@ interface CellOverlayProps {
   scale: number;
   labelPosition: LabelPosition;
   onCellClick: (cellId: string) => void;
-}
-
-function getLabelPositionStyle(position: LabelPosition): React.CSSProperties {
-  switch (position) {
-    case "top-left":
-      return { top: 4, left: 4 };
-    case "top-right":
-      return { top: 4, right: 4 };
-    case "center":
-      return {
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-      };
-    case "bottom-left":
-      return { bottom: 4, left: 4 };
-    case "bottom-right":
-      return { bottom: 4, right: 4 };
-  }
 }
 
 export function CellOverlay({

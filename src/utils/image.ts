@@ -62,9 +62,10 @@ export async function exportToPng(
 
   // 各セルの画像をロードして描画
   for (const pc of placedCells) {
-    const htmlImg = await new Promise<HTMLImageElement>((resolve) => {
+    const htmlImg = await new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
       img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Failed to load image for export"));
       img.src = pc.imageDataUrl;
     });
 

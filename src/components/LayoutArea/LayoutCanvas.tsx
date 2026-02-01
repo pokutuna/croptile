@@ -1,14 +1,9 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
-import { useRef } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
-import type {
-  Cell,
-  DragState,
-  PaintingState,
-  GuideLine,
-  LabelPosition,
-} from "../../types";
+import { getBoundingBox } from "../../utils/geometry";
+import { labelPositionIcons } from "../../utils/label";
+import type { Cell, DragState, PaintingState, GuideLine } from "../../types";
 import { SquareStop } from "lucide-react";
 import { PlacedCellView } from "./PlacedCellView";
 import { ZoomControls } from "./ZoomControls";
@@ -18,8 +13,7 @@ import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
 import { useZoom } from "../../hooks/useZoom";
 import { usePinchZoom } from "../../hooks/usePinchZoom";
-
-const GUTTER_SIZE = 20;
+import { LAYOUT_GUTTER_SIZE as GUTTER_SIZE } from "../../constants";
 
 export function LayoutCanvas() {
   useLocale();
@@ -88,14 +82,6 @@ export function LayoutCanvas() {
   const labelPosition = useAppStore((state) => state.labelPosition);
   const cycleLabelPosition = useAppStore((state) => state.cycleLabelPosition);
 
-  const labelPositionIcons: Record<LabelPosition, string> = {
-    "top-left": "↖",
-    "top-right": "↗",
-    center: "✛",
-    "bottom-left": "↙",
-    "bottom-right": "↘",
-  };
-
   // 配置されたセルの情報
   const placedCellsWithInfo = useMemo(() => {
     return placedCells.map((pc) => ({
@@ -110,28 +96,30 @@ export function LayoutCanvas() {
     }));
   }, [placedCells]);
 
+  // paintStrokes を placedCellId でグループ化（O(n²) 回避）
+  const paintStrokesByCell = useMemo(() => {
+    const map = new Map<string, typeof paintStrokes>();
+    for (const stroke of paintStrokes) {
+      const existing = map.get(stroke.placedCellId);
+      if (existing) {
+        existing.push(stroke);
+      } else {
+        map.set(stroke.placedCellId, [stroke]);
+      }
+    }
+    return map;
+  }, [paintStrokes]);
+
   // 配置されたセルのバウンディングボックスを計算
   const boundingBox = useMemo(() => {
     if (placedCellsWithInfo.length === 0) return null;
-
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    for (const placed of placedCellsWithInfo) {
-      minX = Math.min(minX, placed.x);
-      minY = Math.min(minY, placed.y);
-      maxX = Math.max(maxX, placed.x + placed.cell.rect.width);
-      maxY = Math.max(maxY, placed.y + placed.cell.rect.height);
-    }
-
-    return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-    };
+    const rects = placedCellsWithInfo.map((p) => ({
+      x: p.x,
+      y: p.y,
+      width: p.cell.rect.width,
+      height: p.cell.rect.height,
+    }));
+    return getBoundingBox(rects);
   }, [placedCellsWithInfo]);
 
   // フィット系のハンドラ（boundingBox依存のためラップ）
@@ -592,9 +580,7 @@ export function LayoutCanvas() {
                       scale={scale}
                       isSelected={selectedPlacedCellId === placed.id}
                       paintMode={paintMode}
-                      paintStrokes={paintStrokes.filter(
-                        (s) => s.placedCellId === placed.id,
-                      )}
+                      paintStrokes={paintStrokesByCell.get(placed.id) ?? []}
                       paintingState={
                         paintingState?.placedCellId === placed.id
                           ? paintingState

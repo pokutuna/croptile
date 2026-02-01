@@ -1,25 +1,12 @@
 import { useEffect, useRef, memo, useState, useCallback } from "react";
-import type { Cell, PaintStroke, LabelPosition } from "../../types";
+import type {
+  Cell,
+  PaintStroke,
+  LabelPosition,
+  PaintingState,
+} from "../../types";
 import { t } from "../../i18n";
-
-function getLabelPositionStyle(position: LabelPosition): React.CSSProperties {
-  switch (position) {
-    case "top-left":
-      return { top: 4, left: 4 };
-    case "top-right":
-      return { top: 4, right: 4 };
-    case "center":
-      return {
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-      };
-    case "bottom-left":
-      return { bottom: 4, left: 4 };
-    case "bottom-right":
-      return { bottom: 4, right: 4 };
-  }
-}
+import { getLabelPositionStyle } from "../../utils/label";
 
 interface PlacedCellInfo {
   id: string;
@@ -28,11 +15,6 @@ interface PlacedCellInfo {
   y: number;
   cell: Cell;
   image: { dataUrl: string };
-}
-
-interface PaintingState {
-  placedCellId: string;
-  points: { x: number; y: number }[];
 }
 
 interface PlacedCellViewProps {

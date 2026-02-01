@@ -54,7 +54,7 @@ export function LayoutArea({ widthPercent }: LayoutAreaProps) {
       paintStrokes,
     );
     if (!blob) {
-      alert("No cells to export");
+      alert(t("noContentToExport"));
       return null;
     }
     return blob;

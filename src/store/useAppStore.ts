@@ -8,7 +8,11 @@ import type {
   PaintStroke,
   LabelPosition,
 } from "../types";
-import { calculateCells, assignCellLabels } from "../utils/geometry";
+import {
+  calculateCells,
+  assignCellLabels,
+  getBoundingBox,
+} from "../utils/geometry";
 
 type CutDirection = "horizontal" | "vertical";
 
@@ -262,29 +266,22 @@ export const useAppStore = create<AppState>()((set, get) => ({
     let x = 0;
     let y = 0;
     if (state.placedCells.length > 0) {
-      // 現在のレイアウトのバウンディングボックスを計算
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      for (const pc of state.placedCells) {
-        minX = Math.min(minX, pc.x);
-        minY = Math.min(minY, pc.y);
-        maxX = Math.max(maxX, pc.x + pc.rect.width);
-        maxY = Math.max(maxY, pc.y + pc.rect.height);
-      }
-      const layoutWidth = maxX - minX;
-      const layoutHeight = maxY - minY;
-
-      // 縦長なら右に、横長なら下に追加
-      if (layoutHeight > layoutWidth) {
-        // 縦長 → 右に追加
-        x = maxX;
-        y = minY;
-      } else {
-        // 横長または正方形 → 下に追加
-        x = minX;
-        y = maxY;
+      const rects = state.placedCells.map((pc) => ({
+        x: pc.x,
+        y: pc.y,
+        width: pc.rect.width,
+        height: pc.rect.height,
+      }));
+      const box = getBoundingBox(rects);
+      if (box) {
+        // 縦長なら右に、横長なら下に追加
+        if (box.height > box.width) {
+          x = box.x + box.width;
+          y = box.y;
+        } else {
+          x = box.x;
+          y = box.y + box.height;
+        }
       }
     }
 
