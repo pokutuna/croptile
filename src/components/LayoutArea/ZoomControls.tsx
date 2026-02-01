@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
+import { EditableZoomValue } from "./EditableZoomValue";
 
 interface ZoomControlsProps {
   scale: number;
@@ -20,6 +21,9 @@ interface ZoomControlsProps {
   onFitToView: () => void;
   onFitToWidth: () => void;
   onFitToHeight: () => void;
+  onScaleChange?: (scale: number) => void;
+  minScale?: number;
+  maxScale?: number;
 }
 
 export function ZoomControls({
@@ -33,6 +37,9 @@ export function ZoomControls({
   onFitToView,
   onFitToWidth,
   onFitToHeight,
+  onScaleChange,
+  minScale = 0.25,
+  maxScale = 3,
 }: ZoomControlsProps) {
   useLocale();
 
@@ -46,9 +53,18 @@ export function ZoomControls({
       >
         <ZoomOut size={18} />
       </button>
-      <span className="text-sm font-medium w-16 text-center">
-        {Math.round(scale * 100)}%
-      </span>
+      {onScaleChange ? (
+        <EditableZoomValue
+          scale={scale}
+          onScaleChange={onScaleChange}
+          minScale={minScale}
+          maxScale={maxScale}
+        />
+      ) : (
+        <span className="text-sm font-medium w-16 text-center">
+          {Math.round(scale * 100)}%
+        </span>
+      )}
       <button
         onClick={onZoomIn}
         disabled={!canZoomIn}

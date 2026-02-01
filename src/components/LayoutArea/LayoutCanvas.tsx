@@ -10,6 +10,7 @@ import { TutorialPanel } from "./TutorialPanel";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
 import { useZoom } from "../../hooks/useZoom";
+import { usePinchZoom } from "../../hooks/usePinchZoom";
 
 const GUTTER_SIZE = 20;
 
@@ -29,6 +30,7 @@ export function LayoutCanvas() {
 
   const {
     scale,
+    setScale,
     handleZoomIn,
     handleZoomOut,
     handleResetZoom,
@@ -37,7 +39,17 @@ export function LayoutCanvas() {
     handleFitToHeight: zoomFitToHeight,
     canZoomIn,
     canZoomOut,
+    minScale,
+    maxScale,
   } = useZoom({ gutterSize: GUTTER_SIZE, padding: 40 });
+
+  usePinchZoom({
+    containerRef,
+    scale,
+    setScale,
+    minScale,
+    maxScale,
+  });
 
   const images = useAppStore((state) => state.images);
   const cells = useAppStore((state) => state.cells);
@@ -402,6 +414,9 @@ export function LayoutCanvas() {
           onFitToView={handleFitToView}
           onFitToWidth={handleFitToWidth}
           onFitToHeight={handleFitToHeight}
+          onScaleChange={setScale}
+          minScale={minScale}
+          maxScale={maxScale}
         />
         <BackgroundControls
           useBackground={useBackground}

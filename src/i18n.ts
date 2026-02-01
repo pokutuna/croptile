@@ -26,6 +26,7 @@ const messages = {
     fitToHeight: "Fit to Height",
     clickToAddHorizontalLine: "Click to add horizontal cut line",
     clickToAddVerticalLine: "Click to add vertical cut line",
+    clickToEditZoom: "Click to edit, scroll to adjust",
 
     // LineOverlay
     delete: "Delete",
@@ -102,6 +103,7 @@ const messages = {
     fitToHeight: "高さに合わせる",
     clickToAddHorizontalLine: "クリックで横カット線を追加",
     clickToAddVerticalLine: "クリックで縦カット線を追加",
+    clickToEditZoom: "クリックで編集、スクロールで調整",
 
     // LineOverlay
     delete: "削除",

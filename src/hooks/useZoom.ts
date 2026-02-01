@@ -29,13 +29,15 @@ interface UseZoomReturn {
   ) => void;
   canZoomIn: boolean;
   canZoomOut: boolean;
+  minScale: number;
+  maxScale: number;
 }
 
 export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
   const {
     minScale = 0.25,
     maxScale = 3,
-    step = 0.25,
+    step = 0.1,
     gutterSize = 20,
     padding = 20,
   } = options;
@@ -104,5 +106,7 @@ export function useZoom(options: UseZoomOptions = {}): UseZoomReturn {
     handleFitToHeight,
     canZoomIn: scale < maxScale,
     canZoomOut: scale > minScale,
+    minScale,
+    maxScale,
   };
 }

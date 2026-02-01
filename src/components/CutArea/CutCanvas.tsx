@@ -10,6 +10,7 @@ import { ZoomControls } from "../LayoutArea/ZoomControls";
 import { t } from "../../i18n";
 import { useLocale } from "../../hooks/useLocale";
 import { useZoom } from "../../hooks/useZoom";
+import { usePinchZoom } from "../../hooks/usePinchZoom";
 
 const GUTTER_SIZE = 16; // 左端・上端のカット領域の幅
 
@@ -28,6 +29,7 @@ export function CutCanvas() {
 
   const {
     scale,
+    setScale,
     handleZoomIn,
     handleZoomOut,
     handleResetZoom,
@@ -36,7 +38,17 @@ export function CutCanvas() {
     handleFitToHeight: zoomFitToHeight,
     canZoomIn,
     canZoomOut,
+    minScale,
+    maxScale,
   } = useZoom({ gutterSize: GUTTER_SIZE, padding: 20 });
+
+  usePinchZoom({
+    containerRef,
+    scale,
+    setScale,
+    minScale,
+    maxScale,
+  });
 
   const activeImageId = useAppStore((state) => state.activeImageId);
   const images = useAppStore((state) => state.images);
@@ -348,6 +360,9 @@ export function CutCanvas() {
           onFitToView={handleFitToView}
           onFitToWidth={handleFitToWidth}
           onFitToHeight={handleFitToHeight}
+          onScaleChange={setScale}
+          minScale={minScale}
+          maxScale={maxScale}
         />
       </div>
 
