@@ -106,9 +106,4 @@ export interface GuideLine {
 }
 
 // ラベル位置
-export type LabelPosition =
-  | "top-left"
-  | "top-right"
-  | "center"
-  | "bottom-left"
-  | "bottom-right";
+export type LabelPosition = "top-left" | "center" | "top-right";

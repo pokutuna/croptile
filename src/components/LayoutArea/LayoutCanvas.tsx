@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
 import { getBoundingBox } from "../../utils/geometry";
-import { labelPositionIcons } from "../../utils/label";
+import { labelPositionIcons, labelPositionKeys } from "../../utils/label";
 import type { Cell, DragState, PaintingState, GuideLine } from "../../types";
 import { SquareStop } from "lucide-react";
 import { PlacedCellView } from "./PlacedCellView";
@@ -426,12 +426,13 @@ export function LayoutCanvas() {
         {/* ラベル位置切り替えボタン */}
         <button
           onClick={cycleLabelPosition}
-          className="flex items-center gap-0.5 px-1.5 py-1 rounded hover:bg-gray-300"
+          className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-gray-300"
           title={t("labelPosition")}
         >
           <SquareStop size={16} />
-          <span className="text-sm font-bold">
-            {labelPositionIcons[labelPosition]}
+          <span className="text-sm">
+            {labelPositionIcons[labelPosition]}{" "}
+            {t(labelPositionKeys[labelPosition])}
           </span>
         </button>
         <BackgroundControls

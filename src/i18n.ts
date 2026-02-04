@@ -81,6 +81,11 @@ const messages = {
     white: "White",
     lightGray: "Light Gray",
 
+    // Label positions
+    labelTopLeft: "Top Left",
+    labelCenter: "Center",
+    labelTopRight: "Top Right",
+
     // Errors
     imageLoadFailed: "Failed to load image: {name}",
     noContentToExport: "No tiles to export",
@@ -166,6 +171,11 @@ const messages = {
     // Background presets
     white: "白",
     lightGray: "薄いグレー",
+
+    // Label positions
+    labelTopLeft: "左上",
+    labelCenter: "中央",
+    labelTopRight: "右上",
 
     // Errors
     imageLoadFailed: "画像の読み込みに失敗しました: {name}",

@@ -64,6 +64,7 @@ export const PlacedCellView = memo(function PlacedCellView({
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(
     null,
   );
+  const [isLabelHovered, setIsLabelHovered] = useState(false);
 
   // 画像の描画は cellId と image が変わった時のみ
   useEffect(() => {
@@ -198,15 +199,25 @@ export const PlacedCellView = memo(function PlacedCellView({
       </svg>
 
       <button
-        className="absolute text-xs font-bold px-1.5 py-0.5 rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
-        style={getLabelPositionStyle(labelPosition)}
+        className="absolute text-xs font-bold px-1.5 py-0.5 rounded text-white transition-all"
+        style={{
+          ...getLabelPositionStyle(labelPosition),
+          backgroundColor: isLabelHovered
+            ? "rgba(239, 68, 68, 0.9)"
+            : "rgba(59, 130, 246, 0.9)",
+          ...(labelPosition !== "center" && {
+            transform: isLabelHovered ? "scale(1.1)" : "scale(1)",
+          }),
+        }}
         onClick={(e) => {
           e.stopPropagation();
           onRemove(placed.id);
         }}
+        onMouseEnter={() => setIsLabelHovered(true)}
+        onMouseLeave={() => setIsLabelHovered(false)}
         title={t("clickToDelete")}
       >
-        {placed.cell.label} ×
+        {isLabelHovered ? t("delete") : placed.cell.label}
       </button>
     </div>
   );

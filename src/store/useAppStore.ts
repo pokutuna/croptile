@@ -162,13 +162,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   cycleLabelPosition: () => {
-    const positions: LabelPosition[] = [
-      "top-left",
-      "top-right",
-      "center",
-      "bottom-left",
-      "bottom-right",
-    ];
+    const positions: LabelPosition[] = ["top-left", "center", "top-right"];
     set((state) => {
       const currentIndex = positions.indexOf(state.labelPosition);
       const nextIndex = (currentIndex + 1) % positions.length;
