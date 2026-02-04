@@ -74,6 +74,7 @@ const messages = {
     // Panel descriptions
     panelDescriptionCut: "Split images here",
     panelDescriptionLayout: "Arrange tiles here",
+    saveHint: "Save above ☝️",
     gutterHintVertical: "Click to split vertically across full width",
     gutterHintHorizontal: "Click to split horizontally across full height",
 
@@ -165,6 +166,7 @@ const messages = {
     // Panel descriptions
     panelDescriptionCut: "こちらで画像を切って",
     panelDescriptionLayout: "こちらで並べて",
+    saveHint: "この上で保存 ☝️",
     gutterHintVertical: "クリックで縦に端から端まで切れます",
     gutterHintHorizontal: "クリックで横に端から端まで切れます",
 

@@ -671,15 +671,21 @@ export function LayoutCanvas() {
         </div>
 
         {placedCellsWithInfo.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center pointer-events-none z-20">
-            {/* 説明テキスト (上端寄り) */}
-            <div className="pt-12 pb-4">
+          <div className="absolute inset-0 pointer-events-none z-20">
+            {/* 説明テキスト (上端中央) */}
+            <div className="absolute top-12 left-1/2 -translate-x-1/2">
               <span className="text-3xl font-bold text-gray-500 bg-white/50 px-4 py-2 rounded">
                 {t("panelDescriptionLayout")}
               </span>
             </div>
+            {/* 保存ヒント (右上) */}
+            <div className="absolute top-12 right-8">
+              <span className="text-xl font-bold text-gray-500 bg-white/50 px-4 py-2 rounded">
+                {t("saveHint")}
+              </span>
+            </div>
             {/* TutorialPanel (中央) */}
-            <div className="flex-1 flex items-center justify-center pointer-events-auto">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
               <TutorialPanel
                 hasImages={images.length > 0}
                 hasCells={cells.length > 1}
