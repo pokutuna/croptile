@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useAppStore } from "../../store/useAppStore";
 import { calculateSnap } from "../../utils/snap";
 import { getBoundingBox } from "../../utils/geometry";
+import { splitStrokeByTiles } from "../../utils/strokeClipping";
 import { labelPositionIcons, labelPositionKeys } from "../../utils/label";
 import type { Cell, DragState, PaintingState, GuideLine } from "../../types";
 import { SquareStop } from "lucide-react";
@@ -96,7 +97,7 @@ export function LayoutCanvas() {
     }));
   }, [placedCells]);
 
-  // paintStrokes を placedCellId でグループ化（O(n²) 回避）
+  // paintStrokes を placedCellId でグループ化
   const paintStrokesByCell = useMemo(() => {
     const map = new Map<string, typeof paintStrokes>();
     for (const stroke of paintStrokes) {
@@ -327,15 +328,36 @@ export function LayoutCanvas() {
       return;
     }
 
-    addPaintStroke({
-      placedCellId: paintingState.placedCellId,
-      points: paintingState.points,
-      color: paintColor,
-      width: paintWidth,
-    });
+    // 開始セルを取得
+    const startingCell = placedCells.find(
+      (p) => p.id === paintingState.placedCellId,
+    );
+    if (!startingCell) {
+      setPaintingState(null);
+      return;
+    }
+
+    // セル相対座標をキャンバス絶対座標に変換
+    const absolutePoints = paintingState.points.map((p) => ({
+      x: startingCell.x + p.x,
+      y: startingCell.y + p.y,
+    }));
+
+    // ストロークを各タイルに分割
+    const splitStrokes = splitStrokeByTiles(
+      absolutePoints,
+      placedCells,
+      paintColor,
+      paintWidth,
+    );
+
+    // 分割された各ストロークを保存
+    for (const stroke of splitStrokes) {
+      addPaintStroke(stroke);
+    }
 
     setPaintingState(null);
-  }, [paintingState, addPaintStroke, paintColor, paintWidth]);
+  }, [paintingState, placedCells, addPaintStroke, paintColor, paintWidth]);
 
   // キーボード操作
   useEffect(() => {
@@ -588,11 +610,6 @@ export function LayoutCanvas() {
                       isSelected={selectedPlacedCellId === placed.id}
                       paintMode={paintMode}
                       paintStrokes={paintStrokesByCell.get(placed.id) ?? []}
-                      paintingState={
-                        paintingState?.placedCellId === placed.id
-                          ? paintingState
-                          : null
-                      }
                       paintColor={paintColor}
                       paintWidth={paintWidth}
                       labelPosition={labelPosition}
@@ -601,6 +618,48 @@ export function LayoutCanvas() {
                       onRemove={removePlacedCell}
                     />
                   ))}
+
+                  {/* ペイント中のストロークSVGオーバーレイ（境界越え表示用） */}
+                  {paintingState &&
+                    paintingState.points.length >= 2 &&
+                    (() => {
+                      const placed = placedCells.find(
+                        (p) => p.id === paintingState.placedCellId,
+                      );
+                      if (!placed) return null;
+
+                      const pathData = paintingState.points
+                        .map((p, i) => {
+                          const x = (placed.x + p.x) * scale;
+                          const y = (placed.y + p.y) * scale;
+                          return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+                        })
+                        .join(" ");
+
+                      return (
+                        <svg
+                          className="absolute top-0 left-0 pointer-events-none"
+                          style={{
+                            width: boundingBox
+                              ? (boundingBox.x + boundingBox.width) * scale
+                              : "100%",
+                            height: boundingBox
+                              ? (boundingBox.y + boundingBox.height) * scale
+                              : "100%",
+                            overflow: "visible",
+                          }}
+                        >
+                          <path
+                            d={pathData}
+                            stroke={paintColor}
+                            strokeWidth={paintWidth * scale}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                        </svg>
+                      );
+                    })()}
 
                   {snapLines.map((line, i) => (
                     <div

@@ -1,10 +1,5 @@
 import { useEffect, useRef, memo, useState, useCallback } from "react";
-import type {
-  Cell,
-  PaintStroke,
-  LabelPosition,
-  PaintingState,
-} from "../../types";
+import type { Cell, LabelPosition, PaintStroke } from "../../types";
 import { t } from "../../i18n";
 import { getLabelPositionStyle } from "../../utils/label";
 
@@ -23,7 +18,6 @@ interface PlacedCellViewProps {
   isSelected: boolean;
   paintMode: boolean;
   paintStrokes: PaintStroke[];
-  paintingState: PaintingState | null;
   paintColor: string;
   paintWidth: number;
   labelPosition: LabelPosition;
@@ -52,7 +46,6 @@ export const PlacedCellView = memo(function PlacedCellView({
   isSelected,
   paintMode,
   paintStrokes,
-  paintingState,
   paintColor,
   paintWidth,
   labelPosition,
@@ -170,18 +163,6 @@ export const PlacedCellView = memo(function PlacedCellView({
             fill="none"
           />
         ))}
-
-        {/* 描画中のストローク */}
-        {paintingState && paintingState.points.length >= 2 && (
-          <path
-            d={pointsToPath(paintingState.points)}
-            stroke={paintColor}
-            strokeWidth={paintWidth}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        )}
 
         {/* ペンサイズプレビュー（カーソル位置に半透明の円 + 青い外周線） */}
         {paintMode && cursorPos && (
