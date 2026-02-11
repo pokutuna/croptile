@@ -58,6 +58,15 @@ export const PlacedCellView = memo(function PlacedCellView({
     null,
   );
   const [isLabelHovered, setIsLabelHovered] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // タイマーのクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
 
   // 画像の描画は cellId と image が変わった時のみ
   useEffect(() => {
@@ -183,22 +192,44 @@ export const PlacedCellView = memo(function PlacedCellView({
         className="absolute text-xs font-bold px-1.5 py-0.5 rounded text-white transition-all"
         style={{
           ...getLabelPositionStyle(labelPosition),
-          backgroundColor: isLabelHovered
-            ? "rgba(239, 68, 68, 0.9)"
-            : "rgba(59, 130, 246, 0.9)",
+          backgroundColor: confirmingDelete
+            ? "rgba(220, 38, 38, 0.95)"
+            : isLabelHovered
+              ? "rgba(239, 68, 68, 0.9)"
+              : "rgba(59, 130, 246, 0.9)",
           ...(labelPosition !== "center" && {
-            transform: isLabelHovered ? "scale(1.1)" : "scale(1)",
+            transform:
+              isLabelHovered || confirmingDelete ? "scale(1.1)" : "scale(1)",
           }),
         }}
         onClick={(e) => {
           e.stopPropagation();
-          onRemove(placed.id);
+          if (confirmingDelete) {
+            if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+            setConfirmingDelete(false);
+            onRemove(placed.id);
+          } else {
+            setConfirmingDelete(true);
+            confirmTimerRef.current = setTimeout(() => {
+              setConfirmingDelete(false);
+            }, 2000);
+          }
         }}
         onMouseEnter={() => setIsLabelHovered(true)}
-        onMouseLeave={() => setIsLabelHovered(false)}
-        title={t("clickToDelete")}
+        onMouseLeave={() => {
+          setIsLabelHovered(false);
+          if (confirmingDelete) {
+            if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+            setConfirmingDelete(false);
+          }
+        }}
+        title={confirmingDelete ? t("confirmDelete") : t("clickToDelete")}
       >
-        {isLabelHovered ? t("delete") : placed.cell.label}
+        {confirmingDelete
+          ? t("confirmDelete")
+          : isLabelHovered
+            ? t("delete")
+            : placed.cell.label}
       </button>
     </div>
   );

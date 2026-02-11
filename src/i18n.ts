@@ -68,6 +68,7 @@ const messages = {
     removeGuide: "Remove guide",
     customColor: "Custom color",
     clickToDelete: "Click to delete",
+    confirmDelete: "Sure?",
     clickToAddCell: "Click to add to layout",
     addCell: "+Add",
 
@@ -160,6 +161,7 @@ const messages = {
     removeGuide: "ガイドを削除",
     customColor: "カスタム色",
     clickToDelete: "クリックで削除",
+    confirmDelete: "本当に?",
     clickToAddCell: "クリックでレイアウトに追加",
     addCell: "+追加",
 
