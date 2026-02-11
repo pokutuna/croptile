@@ -330,11 +330,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   setPaintColor: (color) => {
-    set({ paintColor: color });
+    set({ paintColor: color, paintMode: true });
   },
 
   setPaintWidth: (width) => {
-    set({ paintWidth: width });
+    set({ paintWidth: width, paintMode: true });
   },
 
   addPaintStroke: (stroke) => {
