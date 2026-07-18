@@ -1,4 +1,4 @@
-import { Scissors, Languages, Github } from "lucide-react";
+import { Scissors, Languages, GitFork } from "lucide-react";
 import { setLocale, t } from "../i18n";
 import { useLocale } from "../hooks/useLocale";
 
@@ -38,7 +38,7 @@ export function Toolbar() {
           className="text-gray-500 hover:text-gray-800 transition-colors"
           title="GitHub"
         >
-          <Github size={20} />
+          <GitFork size={20} />
         </a>
       </div>
     </header>
